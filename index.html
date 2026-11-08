@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#2a2119">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,26 +19,31 @@
     --desk:#3b2f24; --desk-2:#2a2119;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;min-height:100%}
+  html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
   body{
     background:
       radial-gradient(ellipse at 50% 0%, rgba(255,220,160,.18), transparent 60%),
       repeating-linear-gradient(92deg, rgba(0,0,0,.05) 0 2px, transparent 2px 9px),
       linear-gradient(180deg, var(--desk), var(--desk-2));
     color:var(--ink); font-family:"EB Garamond",Georgia,serif;
-    display:flex; flex-direction:column; align-items:center;
+    position:fixed; inset:0; -webkit-user-select:none; user-select:none;
   }
-  /* growth switch, inked onto the sheet top-right; sizes follow the sheet width */
-  #plan{ position:relative }
-  .toolbar{ position:absolute; top:var(--tb-top,4.2%); right:var(--tb-right,6.5%); display:flex; align-items:center; gap:.5em; z-index:2;
-            font-family:"Caveat",cursive; font-size:clamp(12px,2vw,24px); color:var(--ink-soft) }
-  .toggle{ display:flex; border:1.5px solid var(--ink); border-radius:2px; transform:rotate(-1.2deg);
-           background:rgba(246,238,219,.7); box-shadow:1px 1px 0 rgba(43,36,24,.25) }
-  .toggle button{ background:none; border:0; padding:.15em .7em; cursor:pointer; color:var(--ink); font:inherit }
+  /* the plan is a pan/zoom stage that fills the screen */
+  main{ position:absolute; inset:0 }
+  #plan{ position:absolute; inset:0; overflow:hidden; touch-action:none; cursor:grab }
+  #plan.dragging{ cursor:grabbing }
+  #plan svg{ position:absolute; left:0; top:0; transform-origin:0 0; display:block }
+  /* floating controls: stay put while the plan zooms */
+  .toolbar{ position:fixed; z-index:6; top:calc(env(safe-area-inset-top) + 10px); right:10px; display:flex; align-items:center; gap:.4em;
+            font-family:"Caveat",cursive; font-size:19px; color:var(--ink-soft);
+            background:rgba(246,238,219,.92); padding:4px 4px 4px 12px; border:1px solid #c9b48a; border-radius:3px;
+            box-shadow:0 6px 16px -6px rgba(0,0,0,.55) }
+  .toggle{ display:flex; border:1.5px solid var(--ink); border-radius:2px }
+  .toggle button{ background:none; border:0; padding:4px 12px; min-height:36px; cursor:pointer; color:var(--ink); font:inherit }
+  .zoombar{ position:fixed; z-index:6; right:10px; bottom:calc(env(safe-area-inset-bottom) + 14px); display:flex; flex-direction:column; gap:6px }
+  .zoombar button{ width:44px; height:44px; border-radius:3px; border:1px solid #c9b48a; background:rgba(246,238,219,.92);
+            font-family:"EB Garamond",serif; font-size:24px; color:var(--ink); box-shadow:0 6px 16px -6px rgba(0,0,0,.55); cursor:pointer }
   .toggle button.on{ background:var(--ink); color:#f6eedb }
-  main{ width:100%; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) }
-  #plan{ width:100% }
-  svg{ width:100%; height:auto; display:block }
   .tree{ cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent }
   .tree .label{ pointer-events:auto }
   .tree .crown{ transition: transform 1.4s cubic-bezier(.4,.1,.2,1) }
@@ -61,8 +66,8 @@
   .close{ position:absolute; top:6px; right:8px; width:44px; height:44px; border:0; background:none; cursor:pointer;
           font-family:"IM Fell English",serif; font-size:30px; color:var(--ink-soft); line-height:1 }
   @media (min-width:700px){
-    main{ padding:14px 24px 40px; max-width:1500px }
-    #plan{ filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.4)) }
+    #plan svg{ filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)) }
+    .toolbar{ font-size:21px }
     .modal{ align-items:center }
     .modal .tag{ width:380px; border-radius:2px 2px 14px 14px; transform:rotate(-1deg) translateY(30px); overflow:visible; max-height:none }
     .modal.open .tag{ transform:rotate(-1deg) }
@@ -96,15 +101,19 @@
 </head>
 <body>
 <main>
-  <div id="plan">
-    <div class="toolbar">
-      <span>Wuchs</span>
-      <div class="toggle" role="group" aria-label="Wuchs">
-        <button id="bNow" class="on">heute</button><button id="bLater">in 10 Jahren</button>
-      </div>
-    </div>
-  </div>
+  <div id="plan"></div>
 </main>
+<div class="toolbar">
+  <span>Wuchs</span>
+  <div class="toggle" role="group" aria-label="Wuchs">
+    <button id="bNow" class="on">heute</button><button id="bLater">in 10 Jahren</button>
+  </div>
+</div>
+<div class="zoombar">
+  <button id="zIn" aria-label="Hineinzoomen">+</button>
+  <button id="zOut" aria-label="Herauszoomen">−</button>
+  <button id="zFit" aria-label="Ganzer Plan">⤢</button>
+</div>
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
   <div class="tag"><button class="close" id="close" aria-label="Schließen">×</button><div id="card"></div></div>
 </div>
@@ -201,10 +210,16 @@ function draw(){
   const phone = window.innerWidth < 700;         // phone: thin frame, map fills the width
   const M = phone ? 58 : 110;                    // margin inside the sheet
   const fm = phone ? 8 : 26;
-  const titleY = fm + 72, mapTop = titleY + 82;
-  const W = mapW + M*2 + (phone ? 10 : 40), H = mapTop + mapH + (phone ? 150 : 170);
+  const titleY = fm + 72; let mapTop = titleY + 82;
+  const W = mapW + M*2 + (phone ? 10 : 40);
+  const stack = phone && window.innerHeight > window.innerWidth*1.2;   // legend below the map
+  const lh0 = 44 + data.pflanzen.length*24 + 20;
+  let H = stack ? mapTop + mapH + 110 + lh0 + 70 : mapTop + mapH + (phone ? 150 : 170);
+  if (phone){ const want = W * window.innerHeight / window.innerWidth;   // sheet shaped like the screen
+    if (want > H){ mapTop += (want - H) * .35; H = want; } }
   svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Gartenplan der Streuobstwiese"});
   document.getElementById("plan").appendChild(svg);
+  svg._W = W; svg._H = H;
   defs();
 
   // ---------- the sheet ----------
@@ -309,9 +324,6 @@ function draw(){
   data.pflanzen.forEach((p,i)=>p._n = i+1);
   for (const p of trees) drawTree(g, p);
 
-  const pl = document.getElementById("plan");
-  pl.style.setProperty("--tb-top", ((titleY-(phone?42:48))/H*100)+"%");
-  pl.style.setProperty("--tb-right", ((fm+ (phone?22:40))/W*100)+"%");
   // ---------- title cartouche, top left ----------
   const tc = el("g",{transform:`translate(${phone ? fm+14 : M-30},${titleY})`},svg);
   txt(tc,"Knülchwald",{x:0,y:0,class:"fellsc","font-size":58,fill:"var(--ink)"});
@@ -320,7 +332,7 @@ function draw(){
   el("path",{d:"M300,40 c6,-4 12,-2 14,2 c-6,2 -10,4 -14,-2",fill:"var(--ink)"},tc);
 
   // ---------- legend cartouche in the empty south-east ----------
-  const lx = 25.5*S + M + 92, ly = 22*S + mapTop + 10;
+  const lx = stack ? M : 25.5*S + M + 92, ly = stack ? mapTop + mapH + 110 : 22*S + mapTop + 10;
   const lg = el("g",{transform:`translate(${lx},${ly})`},svg);
   const lw = 300, lh = 44 + data.pflanzen.length*24 + 20;
   const rl = rng("legend");
@@ -339,8 +351,9 @@ function draw(){
   });
 
   // compass rose + scale bar under the legend
-  const cy0 = ly + lh + 60;
-  const c = el("g",{transform:`translate(${lx+lw-50},${cy0+120})`,stroke:"var(--ink)",fill:"none"},svg);
+  const cy0 = stack ? ly + 40 : ly + lh + 60;
+  const sbx = stack ? lx + lw + 70 : lx;
+  const c = el("g",{transform: stack ? `translate(${W-M-50},${ly+lh-60})` : `translate(${lx+lw-50},${cy0+120})`,stroke:"var(--ink)",fill:"none"},svg);
   el("circle",{r:36,"stroke-width":1.2},c); el("circle",{r:31,"stroke-width":.5},c);
   for (let i=0;i<32;i++){ const a=i/32*6.28, l=i%4?3:7; el("line",{x1:Math.cos(a)*31,y1:Math.sin(a)*31,x2:Math.cos(a)*(31-l),y2:Math.sin(a)*(31-l),"stroke-width":.6},c); }
   for (let i=0;i<4;i++){ const rot=i*90;
@@ -351,7 +364,7 @@ function draw(){
   el("circle",{r:3,fill:"var(--ink)"},c);
   txt(c,"N",{y:-54,"text-anchor":"middle",class:"fellsc","font-size":20,fill:"var(--ink)",stroke:"none"});
 
-  const sb = el("g",{transform:`translate(${lx},${cy0+10})`},svg);
+  const sb = el("g",{transform:`translate(${sbx},${cy0+10})`},svg);
   for (let i=0;i<5;i++){ el("rect",{x:i*2*S,y:0,width:2*S,height:7,fill:i%2?"#f6eedb":"var(--ink)",stroke:"var(--ink)","stroke-width":1},sb);
     el("rect",{x:i*2*S,y:7,width:2*S,height:7,fill:i%2?"var(--ink)":"#f6eedb",stroke:"var(--ink)","stroke-width":1},sb); }
   [0,5,10].forEach(m=>txt(sb, m+(m===10?" m":""), {x:m*S,y:32,"text-anchor":"middle",class:"num","font-size":15}));
@@ -430,6 +443,64 @@ function drawTree(g, p){
   tg.addEventListener("click", ()=>show(p)); tg.addEventListener("keydown", e=>{ if(e.key==="Enter") show(p); });
 }
 
+// ---------- pan & zoom of the plan (the page itself never zooms) ----------
+const view = { k:1, tx:0, ty:0, base:1 };
+let moved = false;
+function stage(){ return document.getElementById("plan"); }
+function layout(){
+  const st = stage(), vw = st.clientWidth, vh = st.clientHeight;
+  view.base = Math.min(vw/svg._W, vh/svg._H);
+  svg.setAttribute("width", svg._W*view.base); svg.setAttribute("height", svg._H*view.base);
+  fit(false);
+}
+function clamp(){
+  const st = stage(), vw = st.clientWidth, vh = st.clientHeight;
+  view.k = Math.min(6, Math.max(1, view.k));
+  const cw = svg._W*view.base*view.k, ch = svg._H*view.base*view.k;
+  view.tx = cw <= vw ? (vw-cw)/2 : Math.min(0, Math.max(vw-cw, view.tx));
+  view.ty = ch <= vh ? (vh-ch)/2 : Math.min(0, Math.max(vh-ch, view.ty));
+}
+function apply(anim){
+  clamp();
+  svg.style.transition = anim ? "transform .3s cubic-bezier(.2,.8,.2,1)" : "none";
+  svg.style.transform = `translate(${view.tx}px,${view.ty}px) scale(${view.k})`;
+}
+function fit(anim=true){ view.k = 1; view.tx = 0; view.ty = 0; apply(anim); }
+function zoomAt(f, cx, cy, anim){
+  const k2 = Math.min(6, Math.max(1, view.k*f)); const r = k2/view.k;
+  view.tx = cx - (cx-view.tx)*r; view.ty = cy - (cy-view.ty)*r; view.k = k2; apply(anim);
+}
+function initPanZoom(){
+  const st = stage(); const pts = new Map(); let last = null, startX = 0, startY = 0, lastTap = 0;
+  const local = e => { const b = st.getBoundingClientRect(); return [e.clientX-b.left, e.clientY-b.top]; };
+  st.addEventListener("pointerdown", e=>{ pts.set(e.pointerId, local(e));
+    if (pts.size===1){ moved = false; [startX,startY] = local(e); } last = null; st.classList.add("dragging"); });
+  window.addEventListener("pointermove", e=>{ if (!pts.has(e.pointerId)) return;
+    const p = local(e); pts.set(e.pointerId, p);
+    if (Math.hypot(p[0]-startX, p[1]-startY) > 8) moved = true;
+    const a = [...pts.values()];
+    if (a.length===1){ if (last && !last.d){ view.tx += p[0]-last[0]; view.ty += p[1]-last[1]; apply(false); } last = p; }
+    else { const [p1,p2] = a; const d = Math.hypot(p1[0]-p2[0], p1[1]-p2[1]), m = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
+      if (last && last.d){ view.tx += m[0]-last.m[0]; view.ty += m[1]-last.m[1]; zoomAt(d/last.d, m[0], m[1], false); }
+      last = { d, m }; moved = true; } });
+  const up = e=>{ if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); last = null;
+    if (!pts.size){ st.classList.remove("dragging");
+      // double tap: zoom in there, or back out
+      if (!moved && e.pointerType !== "mouse"){ const now = Date.now(), p = local(e);
+        if (now - lastTap < 300){ view.k > 1.5 ? fit() : zoomAt(2.5, p[0], p[1], true); lastTap = 0; } else lastTap = now; } } };
+  window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  st.addEventListener("dblclick", e=>{ const p = local(e); view.k > 1.5 ? fit() : zoomAt(2.5, p[0], p[1], true); });
+  st.addEventListener("wheel", e=>{ e.preventDefault(); const p = local(e); zoomAt(Math.exp(-e.deltaY*0.0015), p[0], p[1], false); }, {passive:false});
+  // a drag must not count as a tap on a tree
+  st.addEventListener("click", e=>{ if (moved){ e.stopPropagation(); e.preventDefault(); } }, true);
+  const c = ()=>{ const b = st.getBoundingClientRect(); return [b.width/2, b.height/2]; };
+  document.getElementById("zIn").onclick  = ()=>zoomAt(1.6, ...c(), true);
+  document.getElementById("zOut").onclick = ()=>zoomAt(1/1.6, ...c(), true);
+  document.getElementById("zFit").onclick = ()=>fit();
+  // iOS Safari: block page-level pinch, the stage handles it
+  document.addEventListener("gesturestart", e=>e.preventDefault());
+}
+
 function setState(s){
   state = s; document.getElementById("bNow").classList.toggle("on", s==="jetzt"); document.getElementById("bLater").classList.toggle("on", s!=="jetzt");
   svg.querySelectorAll(".crown").forEach(c=>{
@@ -466,10 +537,8 @@ function show(p){
 }
 
 fetch("garden.json").then(r=>r.json()).then(d=>{
-  data = d; draw(); setState("jetzt");
-  let wasPhone = window.innerWidth < 700;
-  window.addEventListener("resize", ()=>{ const ph = window.innerWidth < 700; if (ph===wasPhone) return; wasPhone = ph;
-    svg.remove(); draw(); setState(state); });
+  data = d; draw(); layout(); setState("jetzt"); initPanZoom();
+  let rt; window.addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ svg.remove(); draw(); layout(); setState(state); }, 150); });
   document.getElementById("bNow").onclick = ()=>setState("jetzt");
   document.getElementById("bLater").onclick = ()=>setState("in10");
 }).catch(e=>{ document.getElementById("plan").textContent = "garden.json konnte nicht geladen werden – bitte über start_knuelchwald.ps1 öffnen. ("+e+")"; });
