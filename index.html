@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a2119">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Knülchwald">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Knülchwald · Streuobstwiese</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=EB+Garamond:ital@0;1&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2e8d0; --ink:#2b2418; --ink-soft:#5a4a33; --sepia:#8a6a3f;
+    --heir:#6d4f8c; --berry:#a33a3a;
+    --desk:#3b2f24; --desk-2:#2a2119;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,220,160,.18), transparent 60%),
+      repeating-linear-gradient(92deg, rgba(0,0,0,.05) 0 2px, transparent 2px 9px),
+      linear-gradient(180deg, var(--desk), var(--desk-2));
+    color:var(--ink); font-family:"EB Garamond",Georgia,serif;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  /* growth switch, inked onto the sheet top-right; sizes follow the sheet width */
+  #plan{ position:relative }
+  .toolbar{ position:absolute; top:var(--tb-top,4.2%); right:var(--tb-right,6.5%); display:flex; align-items:center; gap:.5em; z-index:2;
+            font-family:"Caveat",cursive; font-size:clamp(12px,2vw,24px); color:var(--ink-soft) }
+  .toggle{ display:flex; border:1.5px solid var(--ink); border-radius:2px; transform:rotate(-1.2deg);
+           background:rgba(246,238,219,.7); box-shadow:1px 1px 0 rgba(43,36,24,.25) }
+  .toggle button{ background:none; border:0; padding:.15em .7em; cursor:pointer; color:var(--ink); font:inherit }
+  .toggle button.on{ background:var(--ink); color:#f6eedb }
+  main{ width:100%; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) }
+  #plan{ width:100% }
+  svg{ width:100%; height:auto; display:block }
+  .tree{ cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent }
+  .tree .label{ pointer-events:auto }
+  .tree .crown{ transition: transform 1.4s cubic-bezier(.4,.1,.2,1) }
+  .tree .fruit{ transition: opacity .8s .6s }
+  .tree:hover .ink, .tree:focus-visible .ink{ stroke:var(--berry); stroke-width:2.4 }
+  .label{ font-family:"Caveat",cursive; fill:var(--ink); pointer-events:none }
+  .halo{ paint-order:stroke; stroke:#f4ecd6; stroke-width:5px; stroke-linejoin:round; stroke-opacity:.85; font-weight:600 }
+  .num{ font-family:"EB Garamond",serif; font-variant-numeric:lining-nums tabular-nums; font-weight:600; fill:var(--ink) }
+  .fell{ font-family:"IM Fell English",serif }
+  .fellsc{ font-family:"IM Fell English SC",serif }
+  .legend-row{ cursor:pointer } .legend-row:hover text{ fill:var(--berry) }
+  /* plant tag modal: bottom sheet on phones, hanging tag on wider screens */
+  .modal{ position:fixed; inset:0; z-index:20; display:flex; align-items:flex-end; justify-content:center;
+          background:rgba(20,14,8,.55); opacity:0; pointer-events:none; transition:opacity .25s }
+  .modal.open{ opacity:1; pointer-events:auto }
+  .modal .tag{ width:100%; max-height:85vh; overflow-y:auto; transform:translateY(40px); transition:transform .3s cubic-bezier(.2,.8,.2,1);
+               border-radius:16px 16px 0 0; padding-bottom:calc(20px + env(safe-area-inset-bottom)) }
+  .modal.open .tag{ transform:none }
+  .modal .tag::after{ display:none }
+  .close{ position:absolute; top:6px; right:8px; width:44px; height:44px; border:0; background:none; cursor:pointer;
+          font-family:"IM Fell English",serif; font-size:30px; color:var(--ink-soft); line-height:1 }
+  @media (min-width:700px){
+    main{ padding:14px 24px 40px; max-width:1500px }
+    #plan{ filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.4)) }
+    .modal{ align-items:center }
+    .modal .tag{ width:380px; border-radius:2px 2px 14px 14px; transform:rotate(-1deg) translateY(30px); overflow:visible; max-height:none }
+    .modal.open .tag{ transform:rotate(-1deg) }
+    .modal .tag::after{ display:block }
+  }
+  .tag{
+    background:
+      radial-gradient(ellipse at 20% 10%, #fffaf0, transparent 70%),
+      #f6edd8;
+    border:1px solid #c9b48a; padding:24px 22px 20px; position:relative;
+    box-shadow: 0 14px 28px -10px rgba(0,0,0,.6);
+    transform: rotate(-1deg); border-radius:2px 2px 14px 14px;
+  }
+  .tag::before{ content:""; position:absolute; top:10px; left:50%; width:13px; height:13px; margin-left:-6px;
+    border-radius:50%; border:2px solid #b39360; background:var(--desk) }
+  .tag::after{ content:""; position:absolute; top:-46px; left:50%; width:2px; height:52px; background:#d9c9a3;
+    transform:rotate(8deg); transform-origin:bottom }
+  .tag h2{ font-family:"IM Fell English SC",serif; font-weight:400; margin:14px 0 0; font-size:28px }
+  .tag .sorte{ font-family:"Caveat",cursive; font-size:25px; color:var(--ink-soft); line-height:1.1 }
+  .tag .bot{ font-family:"IM Fell English",serif; font-style:italic; color:var(--sepia); font-size:16px }
+  .tag dl{ margin:12px 0 0 } .tag dt{ font-family:"Caveat",cursive; font-size:21px; color:var(--sepia); margin-top:8px }
+  .tag dd{ margin:0; font-size:16px; line-height:1.35 }
+  .tag .empty{ font-family:"Caveat",cursive; font-size:23px; color:var(--ink-soft); text-align:center; padding:30px 0 }
+  .tag hr{ border:0; border-top:1px dashed #c9b48a; margin:12px 0 0 }
+  .stamp{ display:inline-block; font-family:"IM Fell English SC",serif; font-size:15px; border:1.5px solid currentColor;
+          padding:1px 8px; border-radius:2px; transform:rotate(-3deg); margin-top:8px; letter-spacing:.05em }
+  .months{ display:grid; grid-template-columns:repeat(12,1fr); gap:2px; margin-top:4px }
+  .months span{ font-family:"Caveat",cursive; font-size:14px; text-align:center; border-bottom:2px solid #ddd0b0; color:#a8977a }
+  .months span.on{ border-color:var(--berry); color:var(--berry); font-weight:600 }
+</style>
+</head>
+<body>
+<main>
+  <div id="plan">
+    <div class="toolbar">
+      <span>Wuchs</span>
+      <div class="toggle" role="group" aria-label="Wuchs">
+        <button id="bNow" class="on">heute</button><button id="bLater">in 10 Jahren</button>
+      </div>
+    </div>
+  </div>
+</main>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+  <div class="tag"><button class="close" id="close" aria-label="Schließen">×</button><div id="card"></div></div>
+</div>
+
+<script>
+const S = 22;                 // px per meter
+const NS = "http://www.w3.org/2000/svg";
+const MONATE = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+let state = "jetzt", data, svg, current = null;
+
+function rng(seed){ let s = 7; for (const c of String(seed)) s = (s*31 + c.charCodeAt(0)) >>> 0;
+  return () => { s = (s*1664525 + 1013904223) >>> 0; return s/4294967296; }; }
+const el = (tag, attrs={}, parent) => { const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const txt = (parent, s, attrs) => { const t = el("text", attrs, parent); t.textContent = s; return t; };
+
+function wobblyPath(pts, r, amp=1.6, closed=true, step=36){
+  const P = closed ? [...pts, pts[0]] : pts; let d = `M${P[0][0]+(r()-.5)*amp},${P[0][1]+(r()-.5)*amp}`;
+  for (let i=1;i<P.length;i++){ const [x0,y0]=P[i-1],[x1,y1]=P[i]; const n=Math.max(2,Math.round(Math.hypot(x1-x0,y1-y0)/step));
+    for (let j=1;j<=n;j++){ const t=j/n; d+=` L${x0+(x1-x0)*t+(r()-.5)*amp},${y0+(y1-y0)*t+(r()-.5)*amp}`; } }
+  return d + (closed?" Z":"");
+}
+let SHAPE = null;   // optional per-angle radius multiplier for irregular crowns
+function blob(cx, cy, rad, r, amp=.15, n=20){
+  const pts = []; const ph = r()*6.28;
+  for (let i=0;i<n;i++){ const a = ph + i/n*6.28; const rr = rad*(1+(r()-.5)*amp)*(SHAPE?SHAPE(a):1); pts.push([cx+Math.cos(a)*rr, cy+Math.sin(a)*rr]); }
+  let d = ""; for (let i=0;i<n;i++){ const p=pts[i], q=pts[(i+1)%n]; const m=[(p[0]+q[0])/2,(p[1]+q[1])/2];
+    d += (i===0? `M${(pts[n-1][0]+p[0])/2},${(pts[n-1][1]+p[1])/2} ` : "") + `Q${p[0]},${p[1]} ${m[0]},${m[1]} `; }
+  return d + "Z";
+}
+// scalloped outline: the classic hand-drawn tree crown edge
+function scallop(cx, cy, rad, r, bumps){
+  let d = ""; const ph = r()*6.28;
+  for (let i=0;i<=bumps;i++){ const a = ph + i/bumps*6.28; const rr = rad*(1+(r()-.5)*.06)*(SHAPE?SHAPE(a):1);
+    const x = cx+Math.cos(a)*rr, y = cy+Math.sin(a)*rr;
+    if (i===0){ d += `M${x},${y}`; continue; }
+    const am = ph + (i-.5)/bumps*6.28, ro = rad*(1.09+(r()-.5)*.05)*(SHAPE?SHAPE(am):1);
+    d += ` Q${cx+Math.cos(am)*ro},${cy+Math.sin(am)*ro} ${x},${y}`; }
+  return d;
+}
+
+const ART = {   // [light wash, deep wash, fruit colour]
+  Apfel:["#9cba5a","#3e6a2a","#c0392b"], Birne:["#b2bd62","#55702e","#d4b03c"],
+  Zwetsche:["#86a05e","#33532e","#4a3f8a"], Pflaume:["#93b36a","#3d6232","#5a3f86"],
+  Sauerkirsche:["#97ae5c","#456230","#9b1c2c"], Ginkgo:["#d6c25a","#8f7e22",null],
+  Johannisbeere:["#80a865","#30522a",null]
+};
+const BERRY = { Schwarze:"#1d1a22", Rote:"#b4322f", "Weiße":"#efe6b8" };
+
+function defs(){
+  const d = el("defs", {}, svg);
+  let f = "";
+  for (let i=0;i<4;i++) f += `
+    <filter id="wc${i}" x="-25%" y="-25%" width="150%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency="${.018+i*.006}" numOctaves="3" seed="${3+i*11}" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="${12+i*3}" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="4" seed="${9+i}" result="g"/>
+      <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.2 1.75" result="ga"/>
+      <feComposite in="d" in2="ga" operator="in" result="tex"/>
+      <feMorphology in="d" operator="erode" radius="2.2" result="er"/>
+      <feComposite in="d" in2="er" operator="out" result="rim"/>
+      <feGaussianBlur in="rim" stdDeviation=".7" result="rimb"/>
+      <feMerge><feMergeNode in="tex"/><feMergeNode in="rimb"/><feMergeNode in="rimb"/></feMerge>
+    </filter>`;
+  d.innerHTML = f + `
+    <filter id="paperTex" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" seed="5" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 .42  0 0 0 0 .33  0 0 0 0 .2  0 0 0 -.9 .62" result="fib"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.006" numOctaves="3" seed="8" result="m"/>
+      <feColorMatrix in="m" type="matrix" values="0 0 0 0 .55  0 0 0 0 .42  0 0 0 0 .22  0 0 0 -1.6 .9" result="mottle"/>
+      <feMerge><feMergeNode in="mottle"/><feMergeNode in="fib"/></feMerge>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+    <filter id="ink" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence baseFrequency="0.5" numOctaves="1" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter>
+    <filter id="pencil"><feTurbulence baseFrequency="0.9" numOctaves="2" seed="1" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2 1.6" result="a"/>
+      <feComposite in="SourceGraphic" in2="a" operator="in"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#2b2418" stroke-width="1" opacity=".55"/></pattern>
+    <pattern id="hatchX" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="9" stroke="#6b5a42" stroke-width=".7" opacity=".5"/></pattern>
+    <radialGradient id="vign" cx="50%" cy="50%" r="75%">
+      <stop offset=".6" stop-color="#7a5a2a" stop-opacity="0"/><stop offset="1" stop-color="#7a5a2a" stop-opacity=".38"/></radialGradient>
+    <radialGradient id="fox"><stop offset="0" stop-color="#9a6a2a" stop-opacity=".22"/><stop offset=".7" stop-color="#9a6a2a" stop-opacity=".07"/><stop offset="1" stop-color="#9a6a2a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="crownShade" cx="35%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#fff8d8" stop-opacity=".55"/><stop offset=".45" stop-color="#fff8d8" stop-opacity="0"/>
+      <stop offset=".8" stop-color="#1f3014" stop-opacity=".18"/><stop offset="1" stop-color="#1f3014" stop-opacity=".42"/></radialGradient>`;
+}
+
+function draw(){
+  const xs = data.grenze.map(p=>p[0]), ys = data.grenze.map(p=>p[1]);
+  const mapW = Math.max(...xs)*S, mapH = Math.max(...ys)*S;
+  const phone = window.innerWidth < 700;         // phone: thin frame, map fills the width
+  const M = phone ? 58 : 110;                    // margin inside the sheet
+  const fm = phone ? 8 : 26;
+  const titleY = fm + 72, mapTop = titleY + 82;
+  const W = mapW + M*2 + (phone ? 10 : 40), H = mapTop + mapH + (phone ? 150 : 170);
+  svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Gartenplan der Streuobstwiese"});
+  document.getElementById("plan").appendChild(svg);
+  defs();
+
+  // ---------- the sheet ----------
+  const rs = rng("sheet");
+  const sheet = [[4,6],[W-3,2],[W-6,H-4],[2,H-2]];
+  el("path", {d:wobblyPath(sheet, rs, 3, true, 60), fill:"#f1e6cc"}, svg);
+  el("path", {d:wobblyPath(sheet, rs, 3, true, 60), fill:"#000", filter:"url(#paperTex)"}, svg);
+  el("rect", {x:0,y:0,width:W,height:H,fill:"url(#vign)"}, svg);
+  for (let i=0;i<9;i++) el("circle",{cx:rs()*W, cy:rs()*H, r:6+rs()*26, fill:"url(#fox)"}, svg);
+  // a tea ring, the restorer's coffee was on the table
+  el("circle",{cx:W*.86, cy:H*.12, r:46, fill:"none", stroke:"#a77b3d", "stroke-width":3.5, opacity:.12, filter:"url(#wc2)"}, svg);
+
+  // ornamental double frame
+  const fr = rng("frame");
+  const box = (o)=>[[fm+o,fm+o],[W-fm-o,fm+o],[W-fm-o,H-fm-o],[fm+o,H-fm-o]];
+  el("path",{d:wobblyPath(box(0),fr,1.4,true,50),fill:"none",stroke:"var(--ink)","stroke-width":2.2,filter:"url(#ink)"},svg);
+  el("path",{d:wobblyPath(box(7),fr,1.2,true,50),fill:"none",stroke:"var(--ink)","stroke-width":.8},svg);
+  for (const [cx,cy,sx,sy] of [[fm,fm,1,1],[W-fm,fm,-1,1],[W-fm,H-fm,-1,-1],[fm,H-fm,1,-1]]){
+    const c = el("g",{transform:`translate(${cx},${cy}) scale(${sx},${sy})`,stroke:"var(--ink)",fill:"none","stroke-width":1},svg);
+    el("path",{d:"M7,22 C7,12 12,7 22,7 M14,30 C10,20 20,10 30,14 M3,3 L12,12"},c);
+    el("circle",{cx:16,cy:16,r:2.4,fill:"var(--ink)"},c);
+  }
+
+  // ---------- the map ----------
+  const g = el("g", {transform:`translate(${M},${mapTop})`}, svg);
+  const pts = data.grenze.map(([x,y])=>[x*S,y*S]);
+  const inside = (x,y)=>{ let c=false; for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+      const [xi,yi]=pts[i],[xj,yj]=pts[j]; if(((yi>y)!=(yj>y)) && x < (xj-xi)*(y-yi)/(yj-yi)+xi) c=!c; } return c; };
+
+  // pencil survey grid every 5 m, very faint
+  const grid = el("g",{stroke:"#6b5a42","stroke-width":.6,opacity:.28,filter:"url(#pencil)"},g);
+  for (let x=0;x<=mapW+1;x+=5*S) el("line",{x1:x,y1:-20,x2:x,y2:mapH+20},grid);
+  for (let y=0;y<=mapH+1;y+=5*S) el("line",{x1:-20,y1:y,x2:mapW+20,y2:y},grid);
+  for (let x=0,i=0;x<=mapW+1;x+=5*S,i++) txt(g, String(i*5), {x, y:-26, "text-anchor":"middle", class:"label","font-size":14, style:"fill:#8a7a5f"});
+  for (let y=0,i=0;y<=mapH+1;y+=5*S,i++) txt(g, String(i*5), {x:-30, y:y+4, "text-anchor":"middle", class:"label","font-size":14, style:"fill:#8a7a5f"});
+
+  // neighbours: cross-hatched in pencil around the outside
+  const rn = rng("nachbar");
+  const outside = el("g",{},g);
+  el("path",{d:`M-40,-40 H${mapW+40} V${mapH+40} H-40 Z ` + wobblyPath(pts, rn, 1, true), "fill-rule":"evenodd", fill:"url(#hatchX)", opacity:.55, filter:"url(#pencil)"}, outside);
+  txt(g,"Weg",{x:mapW*.12,y:mapH+58,class:"label","font-size":20,style:"fill:#7a6a50"});
+
+  // meadow: three wash layers, then granulation and stipple
+  const rm = rng("wiese");
+  el("path",{d:wobblyPath(pts, rm, 8), fill:"#c2d08c", filter:"url(#wc0)", opacity:.95}, g);
+  el("path",{d:wobblyPath(pts.map(([x,y])=>[x+3,y+2]), rm, 10), fill:"#a9c278", filter:"url(#wc1)", opacity:.45}, g);
+  el("clipPath",{id:"meadowClip"},svg.querySelector("defs")).appendChild(el("path",{d:wobblyPath(pts, rm, 3)}));
+  const mg = el("g",{"clip-path":"url(#meadowClip)"},g);
+  for (let i=0;i<14;i++){ const x=rm()*mapW, y=rm()*mapH; if(!inside(x,y)) continue;
+    el("path",{d:blob(x,y,30+rm()*70,rm,.5,10),fill:rm()<.5?"#8fae5c":"#d4dc9a",opacity:.35,filter:`url(#wc${i%4})`},mg); }
+
+  // hedge along the dark south-east boundary (the satellite shows it)
+  const hedge = el("g",{},g);
+  const hedgeEdges = [[3,4],[4,5]];
+  for (const [a,b] of hedgeEdges){
+    const [x0,y0]=pts[a],[x1,y1]=pts[b]; const L=Math.hypot(x1-x0,y1-y0); const ux=(x1-x0)/L, uy=(y1-y0)/L;
+    let nx=-uy, ny=ux; const mx=(x0+x1)/2, my=(y0+y1)/2; if (inside(mx+nx*8,my+ny*8)){ nx=-nx; ny=-ny; }
+    const rh = rng("hecke"+a);
+    for (let s=10; s<L-6; s+=15+rh()*6){
+      const cx=x0+ux*s+nx*(13+rh()*4), cy=y0+uy*s+ny*(13+rh()*4), rr=12+rh()*6;
+      el("path",{d:blob(cx+3,cy+4,rr,rh,.2,12),fill:"url(#hatch)",opacity:.6},hedge);
+      el("path",{d:blob(cx,cy,rr,rh,.25,12),fill:rh()<.5?"#3d5e2c":"#4f7234",filter:`url(#wc${Math.floor(rh()*4)})`,opacity:.9},hedge);
+      el("path",{d:scallop(cx,cy,rr*.95,rh,7),fill:"none",stroke:"var(--ink)","stroke-width":.9,opacity:.8},hedge);
+    }
+  }
+  const [hx,hy] = [(pts[4][0]+pts[5][0])/2+40,(pts[4][1]+pts[5][1])/2];
+  txt(g,"Hecke",{x:hx,y:hy,"text-anchor":"middle",class:"label halo","font-size":19,style:"fill:#3d5e2c",transform:`rotate(86 ${hx} ${hy})`});
+
+  // grass tufts
+  const rt = rng("gras"); const tufts = el("g", {stroke:"#4f6a2e", "stroke-width":1, fill:"none", opacity:.6, "stroke-linecap":"round"}, g);
+  for (let i=0;i<520;i++){ const x=rt()*mapW, y=rt()*mapH; if(!inside(x,y)) continue;
+    let d=""; const n=2+Math.floor(rt()*3); for(let k=0;k<n;k++){ const o=(k-(n-1)/2)*2.2; d+=`M${x+o},${y} q${o*.6},-3 ${o*1.4+(rt()-.5)*2},-${4+rt()*4} `; }
+    el("path",{d},tufts); }
+  const flowers = el("g",{},g);
+  for (let i=0;i<70;i++){ const x=rt()*mapW, y=rt()*mapH; if(!inside(x,y)) continue;
+    el("circle",{cx:x,cy:y,r:1.4+rt(),fill:rt()<.6?"#fffbe8":"#e7c64a",stroke:"#8a7a50","stroke-width":.3},flowers); }
+
+  // boundary: ink drawn twice, plus survey posts at the corners
+  el("path", {d:wobblyPath(pts, rn, 1.8), fill:"none", stroke:"var(--ink)", "stroke-width":2.6, "stroke-linejoin":"round", filter:"url(#ink)"}, g);
+  el("path", {d:wobblyPath(pts, rn, 2.6), fill:"none", stroke:"var(--ink)", "stroke-width":.7, opacity:.55}, g);
+  for (const [x,y] of pts){ el("circle",{cx:x,cy:y,r:4.5,fill:"#f1e6cc",stroke:"var(--ink)","stroke-width":1.4},g); el("circle",{cx:x,cy:y,r:1.4,fill:"var(--ink)"},g); }
+
+  // dimension lines with arrow ticks, in sepia
+  for (let i=0;i<pts.length;i++){ const a=data.grenze[i], b=data.grenze[(i+1)%pts.length];
+    const len = Math.hypot(b[0]-a[0], b[1]-a[1]); if (len < 9) continue;
+    const [x0,y0]=pts[i],[x1,y1]=pts[(i+1)%pts.length]; const L=len*S; const ux=(x1-x0)/L, uy=(y1-y0)/L;
+    let nx=-uy, ny=ux; const mx=(x0+x1)/2, my=(y0+y1)/2; if (inside(mx+nx*8,my+ny*8)){ nx=-nx; ny=-ny; }
+    const off = (i===3||i===4) ? 64 : 26;  // stay clear of the hedge
+    const dl = el("g",{stroke:"var(--sepia)","stroke-width":.8,fill:"none",opacity:.85},g);
+    el("line",{x1:x0+nx*off,y1:y0+ny*off,x2:x1+nx*off,y2:y1+ny*off},dl);
+    for (const [px,py] of [[x0,y0],[x1,y1]]) el("line",{x1:px+nx*(off-6),y1:py+ny*(off-6),x2:px+nx*(off+6),y2:py+ny*(off+6)},dl);
+    for (const [px,py,s] of [[x0,y0,1],[x1,y1,-1]]){ const bx=px+nx*off, by=py+ny*off;
+      el("path",{d:`M${bx+ux*s*9+nx*3},${by+uy*s*9+ny*3} L${bx},${by} L${bx+ux*s*9-nx*3},${by+uy*s*9-ny*3}`},dl); }
+    let ang=Math.atan2(y1-y0,x1-x0)*180/Math.PI; if (ang>90) ang-=180; if (ang<-90) ang+=180;
+    const tx=mx+nx*(off+11), ty=my+ny*(off+11)+5;
+    const t = txt(g, `${len.toFixed(1).replace(".",",")} m`, {x:tx, y:ty, transform:`rotate(${ang} ${tx} ${ty-5})`, "text-anchor":"middle", class:"label", "font-size":17, style:"fill:var(--sepia)"});
+  }
+
+  // trees: shadows first (all), then crowns largest-first
+  const trees = [...data.pflanzen].sort((a,b)=>b.krone_m.in10-a.krone_m.in10);
+  trees.forEach((p,i)=>p._n = 0);
+  data.pflanzen.forEach((p,i)=>p._n = i+1);
+  for (const p of trees) drawTree(g, p);
+
+  const pl = document.getElementById("plan");
+  pl.style.setProperty("--tb-top", ((titleY-(phone?42:48))/H*100)+"%");
+  pl.style.setProperty("--tb-right", ((fm+ (phone?22:40))/W*100)+"%");
+  // ---------- title cartouche, top left ----------
+  const tc = el("g",{transform:`translate(${phone ? fm+14 : M-30},${titleY})`},svg);
+  txt(tc,"Knülchwald",{x:0,y:0,class:"fellsc","font-size":58,fill:"var(--ink)"});
+  txt(tc,"Plan der Streuobstwiese",{x:4,y:30,class:"fell","font-size":22,"font-style":"italic",fill:"var(--ink-soft)"});
+  el("path",{d:"M4,42 C80,36 160,48 300,40",stroke:"var(--ink)","stroke-width":1.2,fill:"none"},tc);
+  el("path",{d:"M300,40 c6,-4 12,-2 14,2 c-6,2 -10,4 -14,-2",fill:"var(--ink)"},tc);
+
+  // ---------- legend cartouche in the empty south-east ----------
+  const lx = 25.5*S + M + 92, ly = 22*S + mapTop + 10;
+  const lg = el("g",{transform:`translate(${lx},${ly})`},svg);
+  const lw = 300, lh = 44 + data.pflanzen.length*24 + 20;
+  const rl = rng("legend");
+  el("path",{d:wobblyPath([[6,6],[lw+6,6],[lw+6,lh+6],[6,lh+6]],rl,2),fill:"#2b2418",opacity:.12,filter:"url(#soft)"},lg);
+  el("path",{d:wobblyPath([[0,0],[lw,0],[lw,lh],[0,lh]],rl,1.5),fill:"#f6eedb",stroke:"var(--ink)","stroke-width":1.6},lg);
+  el("path",{d:wobblyPath([[5,5],[lw-5,5],[lw-5,lh-5],[5,lh-5]],rl,1),fill:"none",stroke:"var(--ink)","stroke-width":.6},lg);
+  txt(lg,"Legende",{x:lw/2,y:32,"text-anchor":"middle",class:"fellsc","font-size":24});
+  data.pflanzen.forEach((p,i)=>{
+    const row = el("g",{class:"legend-row",transform:`translate(20,${58+i*24})`},lg);
+    el("rect",{x:-6,y:-16,width:lw-28,height:22,fill:"transparent"},row);
+    el("circle",{cx:6,cy:-5,r:9.5,fill:"#f6eedb",stroke:"var(--ink)","stroke-width":1},row);
+    txt(row,String(p._n),{x:6,y:-0.5,"text-anchor":"middle",class:"num","font-size":13});
+    const name = p.art==="Ginkgo" && p.status!=="erbstueck" ? "Ginkgo biloba" : p.art + (p.status==="erbstueck" ? " (Erbstück)" : " " + p.sorte.replace(/^Spätherbstbirne /,"").replace(/^(Schwarze|Rote|Weiße) /,"$1 ").replace(" (Stämmchen)",""));
+    txt(row, p.art==="Johannisbeere" ? "Johannisbeere, "+p.sorte.split(" ")[0].toLowerCase() : name, {x:24,y:0,class:"label","font-size":19});
+    row.addEventListener("click",()=>show(p));
+  });
+
+  // compass rose + scale bar under the legend
+  const cy0 = ly + lh + 60;
+  const c = el("g",{transform:`translate(${lx+lw-50},${cy0+120})`,stroke:"var(--ink)",fill:"none"},svg);
+  el("circle",{r:36,"stroke-width":1.2},c); el("circle",{r:31,"stroke-width":.5},c);
+  for (let i=0;i<32;i++){ const a=i/32*6.28, l=i%4?3:7; el("line",{x1:Math.cos(a)*31,y1:Math.sin(a)*31,x2:Math.cos(a)*(31-l),y2:Math.sin(a)*(31-l),"stroke-width":.6},c); }
+  for (let i=0;i<4;i++){ const rot=i*90;
+    el("path",{d:"M0,-48 L8,0 L0,0 Z",fill:"var(--ink)",transform:`rotate(${rot})`},c);
+    el("path",{d:"M0,-48 L-8,0 L0,0 Z",fill:"#f6eedb","stroke-width":1,transform:`rotate(${rot})`},c);
+    el("path",{d:"M0,-26 L5,0 L0,0 Z",fill:"#8a6a3f","stroke":"none",transform:`rotate(${rot+45})`},c);
+    el("path",{d:"M0,-26 L-5,0 L0,0 Z",fill:"#f6eedb","stroke-width":.6,transform:`rotate(${rot+45})`},c); }
+  el("circle",{r:3,fill:"var(--ink)"},c);
+  txt(c,"N",{y:-54,"text-anchor":"middle",class:"fellsc","font-size":20,fill:"var(--ink)",stroke:"none"});
+
+  const sb = el("g",{transform:`translate(${lx},${cy0+10})`},svg);
+  for (let i=0;i<5;i++){ el("rect",{x:i*2*S,y:0,width:2*S,height:7,fill:i%2?"#f6eedb":"var(--ink)",stroke:"var(--ink)","stroke-width":1},sb);
+    el("rect",{x:i*2*S,y:7,width:2*S,height:7,fill:i%2?"var(--ink)":"#f6eedb",stroke:"var(--ink)","stroke-width":1},sb); }
+  [0,5,10].forEach(m=>txt(sb, m+(m===10?" m":""), {x:m*S,y:32,"text-anchor":"middle",class:"num","font-size":15}));
+  txt(sb,"Maßstab ca. 1 : 200",{x:0,y:-10,class:"num","font-weight":400,"font-size":14,"font-style":"italic",fill:"var(--ink-soft)"});
+
+  // signature line
+  txt(svg,`Fläche ≈ 980 m² · Baumstandorte nach Augenmaß`,
+      {x:W/2,y:H-fm-16,"text-anchor":"middle",class:"label","font-size":17,style:"fill:var(--sepia)"});
+}
+
+function drawTree(g, p){
+  const [x,y] = [p.pos[0]*S, p.pos[1]*S]; const r = rng(p.id);
+  const [light, dark, fruitCol] = ART[p.art] || ART.Apfel;
+  const heir = p.status === "erbstueck", small = p.art === "Johannisbeere";
+  const tg = el("g", {class:"tree", transform:`translate(${x},${y})`, tabindex:0, role:"button", "aria-label":`${p.art} ${p.sorte}`}, g);
+  const R = p.krone_m.in10/2*S;
+  el("circle",{r:small?20:30,fill:"transparent"},tg);   // generous tap target on phones
+  const crown = el("g", {class:"crown"}, tg); crown.dataset.now = p.krone_m.jetzt/p.krone_m.in10;
+  const fi = Math.floor(r()*4);
+  if (p.form === "unregelmaessig"){ const p1=r()*6.28,p2=r()*6.28,p3=r()*6.28;
+    SHAPE = a => 1 + .16*Math.sin(2*a+p1) + .1*Math.sin(3*a+p2) + .06*Math.sin(5*a+p3); }
+  else if (!small){ const p1=r()*6.28,p2=r()*6.28,p3=r()*6.28;   // gently uneven, like a hand-drawn crown
+    SHAPE = a => 1 + .07*Math.sin(2*a+p1) + .05*Math.sin(3*a+p2) + .035*Math.sin(5*a+p3); }
+
+  {
+  // cast shadow, hatched, falling south-east
+  el("path",{d:blob(R*.22,R*.26,R*1.0,r,.12),fill:"url(#hatch)",opacity:.75},crown);
+  el("path",{d:blob(R*.2,R*.24,R*.98,r,.12),fill:"#2b3a1c",opacity:.13,filter:`url(#wc${fi})`},crown);
+  // washes: base, deep shade on the SE, second glaze
+  el("path",{d:blob(0,0,R,r,.14),fill:light,filter:`url(#wc${fi})`},crown);
+  el("path",{d:blob(R*.22,R*.2,R*.68,r,.3,12),fill:dark,opacity:.55,filter:`url(#wc${(fi+1)%4})`},crown);
+  el("path",{d:blob(-R*.25,-R*.2,R*.45,r,.4,10),fill:light,opacity:.6,filter:`url(#wc${(fi+2)%4})`},crown);
+  el("path",{d:blob(0,0,R*.97,r,0),fill:"url(#crownShade)"},crown);
+  // a white glint left by the brush
+  el("path",{d:blob(-R*.38,-R*.38,R*.13,r,.6,8),fill:"#fffbea",opacity:.7},crown);
+
+  // ink: scalloped edge (heirloom gets a busier hand), branch sign
+  el("path",{class:"ink",d:scallop(r()*1.5,r()*1.5,R*1.02,r,heir?Math.round(R/5):Math.max(8,Math.round(R/7))),fill:"none",stroke:"var(--ink)","stroke-width":1.5,"stroke-linejoin":"round",filter:"url(#ink)"},crown);
+  if (heir) el("path",{d:scallop(0,0,R*.98,r,Math.round(R/6)),fill:"none",stroke:"var(--ink)","stroke-width":.6,opacity:.6},crown);
+  if (!small){
+    const nb = heir ? 11 : 7;
+    for (let i=0;i<nb;i++){ const a=i/nb*6.28 + r()*.5, l=R*(.55+r()*.4);
+      const mx=Math.cos(a+.15)*l*.5, my=Math.sin(a+.15)*l*.5;
+      el("path",{d:`M0,0 Q${mx},${my} ${Math.cos(a)*l},${Math.sin(a)*l}`,stroke:"var(--ink)","stroke-width":i%2?.6:1,fill:"none",opacity:.7},crown);
+      if (R>40) el("path",{d:`M${mx},${my} l${Math.cos(a+.7)*l*.25},${Math.sin(a+.7)*l*.25}`,stroke:"var(--ink)","stroke-width":.5,opacity:.6},crown); }
+  }
+  }
+  if (p.art==="Ginkgo") for (let i=0;i<9;i++){ const a=i/9*6.28+r(), l=R*(.3+r()*.45); const fx=Math.cos(a)*l, fy=Math.sin(a)*l;
+    el("path",{d:`M${fx},${fy} l-4.5,-7 q4.5,-3 9,0 z`,fill:"#d9b92a",stroke:"var(--ink)","stroke-width":.5,transform:`rotate(${a*57} ${fx} ${fy})`},crown); }
+
+  SHAPE = null;
+  // fruit, shown in the 10-year view
+  const fruit = el("g",{class:"fruit"+(heir?" always":"")},crown);
+  const fc = small ? BERRY[p.sorte.split(" ")[0]] : fruitCol;
+  if (fc){ const n = small ? 7 : Math.round(R/4);
+    for (let i=0;i<n;i++){ const a=r()*6.28, l=R*(.2+r()*.65); const fx=Math.cos(a)*l, fy=Math.sin(a)*l;
+      if (small){ for (let k=0;k<3;k++) el("circle",{cx:fx+k*1.5,cy:fy+k*2.6,r:2.1,fill:fc,stroke:"var(--ink)","stroke-width":.4},fruit); }
+      else { el("circle",{cx:fx,cy:fy,r:p.art==="Sauerkirsche"?2.2:3.2,fill:fc,stroke:"var(--ink)","stroke-width":.5},fruit);
+             el("circle",{cx:fx-.9,cy:fy-.9,r:.8,fill:"#fff",opacity:.7},fruit); } } }
+
+  // trunk mark
+  el("circle",{r:small?2.2:3.2,fill:"#f1e6cc",stroke:"var(--ink)","stroke-width":1.2},tg);
+  el("circle",{r:1.2,fill:"var(--ink)"},tg);
+
+  // label with a little leader, number disc + name
+  const a = small ? Math.PI : -0.45, lr = small ? 14 : R + 10;
+  const ex = Math.cos(a)*lr, ey = Math.sin(a)*lr;
+  el("path",{d:`M${Math.cos(a)*(small?5:R*.55)},${Math.sin(a)*(small?5:R*.55)} L${ex},${ey}`,stroke:"var(--ink)","stroke-width":.7,opacity:.7},tg);
+  const bx = small ? ex-10 : ex+10;
+  el("circle",{cx:bx,cy:ey,r:10,fill:"#f6eedb",stroke:"var(--ink)","stroke-width":1},tg);
+  txt(tg,String(p._n),{x:bx,y:ey+4.5,"text-anchor":"middle",class:"num","font-size":13,"pointer-events":"none"});
+  if (!small){
+    txt(tg,p.art,{x:ex+22,y:ey+7,class:"label halo","font-size":24});
+    if (heir) txt(tg,"Erbstück",{x:ex+23,y:ey+25,class:"label halo","font-size":17,style:"fill:var(--heir)"});
+  }
+  tg.addEventListener("click", ()=>show(p)); tg.addEventListener("keydown", e=>{ if(e.key==="Enter") show(p); });
+}
+
+function setState(s){
+  state = s; document.getElementById("bNow").classList.toggle("on", s==="jetzt"); document.getElementById("bLater").classList.toggle("on", s!=="jetzt");
+  svg.querySelectorAll(".crown").forEach(c=>{
+    const now = s==="jetzt"; const sx = now ? +(c.dataset.sx ?? c.dataset.now) : 1, sy = now ? +(c.dataset.sy ?? c.dataset.now) : 1;
+    c.style.transform = `scale(${sx},${sy})`; });
+  svg.querySelectorAll(".fruit").forEach(f=>f.style.opacity = (s!=="jetzt" || f.classList.contains("always")) ? 1 : 0);
+  if (current && document.getElementById("modal").classList.contains("open")) show(current);
+}
+function closeCard(){ document.getElementById("modal").classList.remove("open"); }
+document.getElementById("close").onclick = closeCard;
+document.getElementById("modal").addEventListener("click", e=>{ if (e.target.id==="modal") closeCard(); });
+document.addEventListener("keydown", e=>{ if (e.key==="Escape") closeCard(); });
+
+function show(p){
+  current = p; const k = state==="jetzt" ? "jetzt" : "in10";
+  const esc = s => String(s ?? "").replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const months = MONATE.map((m,i)=>`<span class="${p.monate.includes(i+1)?"on":""}">${m}</span>`).join("");
+  const planted = p.gepflanzt ? esc(p.gepflanzt) : "<i style='color:#a8977a'>noch nicht eingetragen</i>";
+  const log = (p.tagebuch||[]).map(e=>`<dd>${esc(e.datum)}: ${esc(e.text)}</dd>`).join("");
+  document.getElementById("modal").classList.add("open");
+  document.getElementById("card").innerHTML = `
+    <h2 id="cardTitle">${p._n}. ${esc(p.art)}</h2><div class="sorte">${esc(p.sorte)}</div><div class="bot">${esc(p.botanisch)}</div>
+    ${p.status==="erbstueck" ? `<span class="stamp" style="color:var(--heir)">Erbstück · war schon da</span>` : ""}
+    <hr>
+    <dl>
+      <dt>Größe ${state==="jetzt"?"heute":"in 10 Jahren"}</dt><dd>ca. ${String(p.hoehe_m[k]).replace(".",",")} m hoch, Krone ca. ${String(p.krone_m[k]).replace(".",",")} m breit</dd>
+      <dt>Ernte</dt><dd>${esc(p.ernte || "—")}</dd>
+      ${p.monate.length ? `<div class="months">${months}</div>` : ""}
+      <dt>Frucht</dt><dd>${esc(p.frucht)}</dd>
+      <dt>Hinweis</dt><dd>${esc(p.hinweis)}</dd>
+      <dt>Gepflanzt</dt><dd>${planted}</dd>
+      ${log ? `<dt>Tagebuch</dt>${log}` : ""}
+    </dl>`;
+}
+
+fetch("garden.json").then(r=>r.json()).then(d=>{
+  data = d; draw(); setState("jetzt");
+  let wasPhone = window.innerWidth < 700;
+  window.addEventListener("resize", ()=>{ const ph = window.innerWidth < 700; if (ph===wasPhone) return; wasPhone = ph;
+    svg.remove(); draw(); setState(state); });
+  document.getElementById("bNow").onclick = ()=>setState("jetzt");
+  document.getElementById("bLater").onclick = ()=>setState("in10");
+}).catch(e=>{ document.getElementById("plan").textContent = "garden.json konnte nicht geladen werden – bitte über start_knuelchwald.ps1 öffnen. ("+e+")"; });
+</script>
+</body>
+</html>

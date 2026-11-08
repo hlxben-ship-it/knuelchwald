@@ -1,0 +1,344 @@
+{
+  "name": "Streuobstwiese",
+  "einheit": "Meter, Ursprung oben links, Norden oben",
+  "hinweis_masse": "Grenze aus Google-Maps-Messung (979,72 m²), Baumstandorte ungefähr nach Skizze.",
+  "grenze": [
+    [
+      18.4,
+      0.0
+    ],
+    [
+      20.8,
+      7.1
+    ],
+    [
+      36.4,
+      0.0
+    ],
+    [
+      41.4,
+      12.1
+    ],
+    [
+      23.0,
+      20.5
+    ],
+    [
+      24.5,
+      40.8
+    ],
+    [
+      6.7,
+      43.9
+    ],
+    [
+      0.0,
+      14.2
+    ]
+  ],
+  "pflanzen": [
+    {
+      "id": "birne-graf-dietrich",
+      "art": "Birne",
+      "sorte": "Spätherbstbirne 'Graf Dietrich'",
+      "botanisch": "Pyrus communis",
+      "status": "neu",
+      "pos": [
+        11.3,
+        11.4
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 1.0,
+        "in10": 5.0
+      },
+      "hoehe_m": {
+        "jetzt": 2.2,
+        "in10": 5.5
+      },
+      "ernte": "Pflückreife Ende September/Oktober, Genussreife Oktober–November",
+      "monate": [
+        10,
+        11
+      ],
+      "frucht": "Sächsische Sorte (Saxonia), große, berostete Herbstbirne, saftig-süß",
+      "hinweis": "Nicht zu spät pflücken, ein paar Tage nachreifen lassen. Birnen brauchen eine Befruchtersorte – die Winterforelle steht nahe genug.",
+      "tagebuch": []
+    },
+    {
+      "id": "birne-winterforelle",
+      "art": "Birne",
+      "sorte": "'Nordhäuser Winterforelle'",
+      "botanisch": "Pyrus communis",
+      "status": "neu",
+      "pos": [
+        9.0,
+        32.5
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 1.0,
+        "in10": 5.5
+      },
+      "hoehe_m": {
+        "jetzt": 2.2,
+        "in10": 6.0
+      },
+      "ernte": "Ernte Oktober–November, Genussreife Dezember bis März (Lagerbirne)",
+      "monate": [
+        10,
+        11
+      ],
+      "frucht": "Mittelgroß, grünlich-rot, gelblich-weißes, saftiges Fleisch, mäßig süß, kaum säuerlich",
+      "hinweis": "Wächst breit. Kühl und dunkel lagern, dann reift sie langsam bis in den Winter nach. Mag warme, humose Böden.",
+      "tagebuch": []
+    },
+    {
+      "id": "apfel-muskatrenette",
+      "art": "Apfel",
+      "sorte": "'Oberlausitzer Muskatrenette'",
+      "botanisch": "Malus domestica",
+      "status": "neu",
+      "pos": [
+        22.3,
+        13.6
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 1.0,
+        "in10": 5.0
+      },
+      "hoehe_m": {
+        "jetzt": 2.2,
+        "in10": 5.0
+      },
+      "ernte": "Pflücken Ende September, Genussreife September bis Januar",
+      "monate": [
+        9,
+        10
+      ],
+      "frucht": "Würzige Lokalsorte aus der Lausitz, süß-aromatischer Tafelapfel, mittelgroß, rundlich-eiförmig",
+      "hinweis": "Halbstamm auf MM111 (starke Unterlage). Gut lagerfähig, das Aroma entwickelt sich im Lager weiter.",
+      "tagebuch": []
+    },
+    {
+      "id": "zwetsche-haus",
+      "art": "Zwetsche",
+      "sorte": "'Hauszwetsche'",
+      "botanisch": "Prunus domestica",
+      "status": "neu",
+      "pos": [
+        29.4,
+        14.5
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 1.0,
+        "in10": 4.0
+      },
+      "hoehe_m": {
+        "jetzt": 2.2,
+        "in10": 4.5
+      },
+      "ernte": "Mitte September bis Mitte Oktober",
+      "monate": [
+        9,
+        10
+      ],
+      "frucht": "Dunkelblau, goldgelbes, festes Fleisch, gut steinlösend, süß bis leicht herb, würzig",
+      "hinweis": "Selbstfruchtbar und schwach wachsend. Die beste Spätsorte für alles: Kuchen, Mus, Einkochen. Erst ernten, wenn die Haut am Stiel leicht schrumpelt.",
+      "tagebuch": []
+    },
+    {
+      "id": "kirsche-achat",
+      "art": "Sauerkirsche",
+      "sorte": "'Achat'",
+      "botanisch": "Prunus cerasus",
+      "status": "neu",
+      "pos": [
+        19.3,
+        29.2
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 1.0,
+        "in10": 4.5
+      },
+      "hoehe_m": {
+        "jetzt": 2.2,
+        "in10": 4.5
+      },
+      "ernte": "Juli, mittelfrüh, etwa 2 Wochen vor der Schattenmorelle; langes Erntefenster",
+      "monate": [
+        7
+      ],
+      "frucht": "Extrasüße Sauerkirsche, dunkelrot, fruchtig, mittelfest",
+      "hinweis": "Resistent gegen Monilia und Sprühflecken, anspruchslos und starkwüchsig. Gleich nach der Ernte auslichten.",
+      "tagebuch": []
+    },
+    {
+      "id": "ginkgo",
+      "art": "Ginkgo",
+      "sorte": "Ginkgo biloba – Erbstück",
+      "botanisch": "Ginkgo biloba",
+      "status": "erbstueck",
+      "pos": [
+        30.8,
+        9.8
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 0.8,
+        "in10": 2.5
+      },
+      "hoehe_m": {
+        "jetzt": 1.5,
+        "in10": 4.0
+      },
+      "ernte": null,
+      "monate": [],
+      "frucht": "Zierbaum, keine Ernte",
+      "hinweis": "Stand schon da, als wir kamen. Wächst langsam, wird aber sehr alt. Im Herbst färbt er sich leuchtend goldgelb und wirft die Blätter dann fast auf einen Schlag ab.",
+      "tagebuch": []
+    },
+    {
+      "id": "jb-schwarz",
+      "art": "Johannisbeere",
+      "sorte": "Schwarze 'Bona' (Stämmchen)",
+      "botanisch": "Ribes nigrum",
+      "status": "neu",
+      "pos": [
+        17.7,
+        2.7
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 0.5,
+        "in10": 1.0
+      },
+      "hoehe_m": {
+        "jetzt": 1.0,
+        "in10": 1.2
+      },
+      "ernte": "Sehr früh, ab Anfang Juni",
+      "monate": [
+        6
+      ],
+      "frucht": "Sehr groß, schwarz, glänzend, süß, mild, besonders aromatisch",
+      "hinweis": "Frühsorte, tolerant gegen Mehltau. Hauptstamm anbinden, die Krone jedes Jahr nach der Ernte auslichten.",
+      "tagebuch": []
+    },
+    {
+      "id": "jb-rot",
+      "art": "Johannisbeere",
+      "sorte": "Rote (Stämmchen)",
+      "botanisch": "Ribes rubrum",
+      "status": "neu",
+      "pos": [
+        18.6,
+        4.8
+      ],
+      "gepflanzt": null,
+      "sorte_unbekannt": true,
+      "krone_m": {
+        "jetzt": 0.5,
+        "in10": 1.0
+      },
+      "hoehe_m": {
+        "jetzt": 1.0,
+        "in10": 1.2
+      },
+      "ernte": "Ende Juni bis Juli",
+      "monate": [
+        6,
+        7
+      ],
+      "frucht": "Rote Trauben, säuerlich-frisch",
+      "hinweis": "Ernten, wenn die ganze Traube durchgefärbt ist. Ganze Rispen abzupfen.",
+      "tagebuch": []
+    },
+    {
+      "id": "jb-weiss",
+      "art": "Johannisbeere",
+      "sorte": "Weiße (Stämmchen)",
+      "botanisch": "Ribes rubrum",
+      "status": "neu",
+      "pos": [
+        19.3,
+        6.6
+      ],
+      "gepflanzt": null,
+      "sorte_unbekannt": true,
+      "krone_m": {
+        "jetzt": 0.5,
+        "in10": 1.0
+      },
+      "hoehe_m": {
+        "jetzt": 1.0,
+        "in10": 1.2
+      },
+      "ernte": "Ende Juni bis Juli",
+      "monate": [
+        6,
+        7
+      ],
+      "frucht": "Hell, durchscheinend, milder als die rote",
+      "hinweis": "Die mildeste der drei, gut zum Naschen direkt vom Strauch.",
+      "tagebuch": []
+    },
+    {
+      "id": "pflaume-alt",
+      "art": "Pflaume",
+      "sorte": "Erbstück – Sorte unbekannt",
+      "botanisch": "Prunus domestica",
+      "status": "erbstueck",
+      "pos": [
+        13.5,
+        21.2
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 8.0,
+        "in10": 8.0
+      },
+      "hoehe_m": {
+        "jetzt": 8.0,
+        "in10": 8.0
+      },
+      "ernte": "Je nach Sorte August–September",
+      "monate": [
+        8,
+        9
+      ],
+      "frucht": "Wartet darauf, beschrieben zu werden",
+      "hinweis": "Der alte Hüter der Wiese, er stand schon vor uns hier. Totholz im Sommer schneiden, nicht im Winter (Silberblattgefahr).",
+      "tagebuch": [],
+      "form": "unregelmaessig"
+    },
+    {
+      "id": "apfel-alt",
+      "art": "Apfel",
+      "sorte": "Erbstück – Sorte unbekannt",
+      "botanisch": "Malus domestica",
+      "status": "erbstueck",
+      "pos": [
+        6.6,
+        24.7
+      ],
+      "gepflanzt": null,
+      "krone_m": {
+        "jetzt": 2.5,
+        "in10": 2.5
+      },
+      "hoehe_m": {
+        "jetzt": 1.8,
+        "in10": 1.8
+      },
+      "ernte": "Unbekannt – beobachten",
+      "monate": [],
+      "frucht": "Wartet darauf, beschrieben zu werden",
+      "hinweis": "Nur mannshoch, aber schon da, als wir kamen. Eine Fruchtprobe beim Pomologen-Verein könnte den Namen verraten.",
+      "tagebuch": []
+    }
+  ]
+}
