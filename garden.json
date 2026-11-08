@@ -47,7 +47,7 @@
         11.3,
         11.4
       ],
-      "gepflanzt": null,
+      "gepflanzt": "Sommer 2025",
       "krone_m": {
         "jetzt": 1.0,
         "in10": 5.0
@@ -75,7 +75,7 @@
         9.0,
         32.5
       ],
-      "gepflanzt": null,
+      "gepflanzt": "November 2026",
       "krone_m": {
         "jetzt": 1.0,
         "in10": 5.5
@@ -103,7 +103,7 @@
         22.3,
         13.6
       ],
-      "gepflanzt": null,
+      "gepflanzt": "Herbst 2024",
       "krone_m": {
         "jetzt": 1.0,
         "in10": 5.0
@@ -131,7 +131,7 @@
         29.4,
         14.5
       ],
-      "gepflanzt": null,
+      "gepflanzt": "November 2026",
       "krone_m": {
         "jetzt": 1.0,
         "in10": 4.0
@@ -159,7 +159,7 @@
         19.3,
         29.2
       ],
-      "gepflanzt": null,
+      "gepflanzt": "November 2026",
       "krone_m": {
         "jetzt": 1.0,
         "in10": 4.5
@@ -211,7 +211,7 @@
         17.7,
         2.7
       ],
-      "gepflanzt": null,
+      "gepflanzt": "November 2026",
       "krone_m": {
         "jetzt": 0.5,
         "in10": 1.0
@@ -238,7 +238,7 @@
         18.6,
         4.8
       ],
-      "gepflanzt": null,
+      "gepflanzt": "Sommer 2026",
       "sorte_unbekannt": true,
       "krone_m": {
         "jetzt": 0.5,
@@ -267,7 +267,7 @@
         19.3,
         6.6
       ],
-      "gepflanzt": null,
+      "gepflanzt": "Sommer 2026",
       "sorte_unbekannt": true,
       "krone_m": {
         "jetzt": 0.5,
