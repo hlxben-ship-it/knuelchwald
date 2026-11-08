@@ -41,15 +41,16 @@
   svg.live path, svg.live circle, svg.live rect, svg.live ellipse, svg.live line{ opacity:0 }
   svg.live .tree .crown{ transition:none }
   /* floating controls: stay put while the plan zooms */
-  .toolbar{ position:fixed; z-index:6; top:calc(env(safe-area-inset-top) + 10px); right:10px; display:flex; align-items:center; gap:.4em;
-            font-family:"Caveat",cursive; font-size:19px; color:var(--ink-soft);
-            background:rgba(246,238,219,.92); padding:4px 4px 4px 12px; border:1px solid #c9b48a; border-radius:3px;
+  .toolbar{ position:fixed; z-index:6; bottom:calc(env(safe-area-inset-bottom) + 12px); left:10px; display:flex; align-items:center; gap:.4em;
+            font-family:"Caveat",cursive; font-size:17px; color:var(--ink-soft);
+            background:rgba(246,238,219,.94); padding:3px 3px 3px 10px; border:1px solid #c9b48a; border-radius:3px;
             box-shadow:0 6px 16px -6px rgba(0,0,0,.55) }
   .toggle{ display:flex; border:1.5px solid var(--ink); border-radius:2px }
-  .toggle button{ background:none; border:0; padding:4px 12px; min-height:36px; cursor:pointer; color:var(--ink); font:inherit }
-  .zoombar{ position:fixed; z-index:6; right:10px; bottom:calc(env(safe-area-inset-bottom) + 14px); display:flex; flex-direction:column; gap:6px }
-  .zoombar button{ width:44px; height:44px; border-radius:3px; border:1px solid #c9b48a; background:rgba(246,238,219,.92);
-            font-family:"EB Garamond",serif; font-size:24px; color:var(--ink); box-shadow:0 6px 16px -6px rgba(0,0,0,.55); cursor:pointer }
+  .toggle button{ background:none; border:0; padding:2px 10px; min-height:34px; cursor:pointer; color:var(--ink); font:inherit }
+  .zoombar{ position:fixed; z-index:6; right:10px; bottom:calc(env(safe-area-inset-bottom) + 12px); display:flex; gap:5px }
+  @media (max-width:420px){ .toolbar > span{ display:none } .toolbar{ padding-left:3px } }
+  .zoombar button{ width:42px; height:42px; border-radius:3px; border:1px solid #c9b48a; background:rgba(246,238,219,.92);
+            font-family:"EB Garamond",serif; font-size:22px; line-height:1; color:var(--ink); box-shadow:0 6px 16px -6px rgba(0,0,0,.55); cursor:pointer }
   .toggle button.on{ background:var(--ink); color:#f6eedb }
   .tree{ cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent }
   .tree .label{ pointer-events:auto }
@@ -74,7 +75,7 @@
           font-family:"IM Fell English",serif; font-size:30px; color:var(--ink-soft); line-height:1 }
   @media (min-width:700px){
     #sheet{ box-shadow: 0 18px 40px rgba(0,0,0,.55) }
-    .toolbar{ font-size:21px }
+    .toolbar{ font-size:20px }
     .modal{ align-items:center }
     .modal .tag{ width:380px; border-radius:2px 2px 14px 14px; transform:rotate(-1deg) translateY(30px); overflow:visible; max-height:none }
     .modal.open .tag{ transform:rotate(-1deg) }
@@ -223,7 +224,7 @@ function draw(){
   const W = Math.round(mapW + M*2 + 10);
   const lh0 = 44 + data.pflanzen.length*24 + 20;
   let H = mapTop + mapH + 110 + lh0 + 70;
-  const want = W * SHEET_RATIO; if (want > H){ mapTop += (want - H) * .35; H = want; }
+  const want = W * SHEET_RATIO; let gap = 0; if (want > H){ gap = (want - H)/4; mapTop += gap; H = want; }   // the bottom half stays free for the control bar
   H = Math.round(H);
   svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Gartenplan der Streuobstwiese"});
   const plan = document.getElementById("plan"); plan.innerHTML = "";
@@ -343,7 +344,7 @@ function draw(){
   el("path",{d:"M300,40 c6,-4 12,-2 14,2 c-6,2 -10,4 -14,-2",fill:"var(--ink)"},tc);
 
   // ---------- legend cartouche in the empty south-east ----------
-  const lx = stack ? M : 25.5*S + M + 92, ly = stack ? mapTop + mapH + 110 : 22*S + mapTop + 10;
+  const lx = stack ? M : 25.5*S + M + 92, ly = stack ? mapTop + mapH + 110 + gap : 22*S + mapTop + 10;
   const lg = el("g",{transform:`translate(${lx},${ly})`},svg);
   const lw = 300, lh = 44 + data.pflanzen.length*24 + 20;
   const rl = rng("legend");
@@ -364,7 +365,7 @@ function draw(){
   // compass rose + scale bar under the legend
   const cy0 = stack ? ly + 40 : ly + lh + 60;
   const sbx = stack ? lx + lw + 70 : lx;
-  const c = el("g",{transform: stack ? `translate(${W-M-50},${ly+lh-60})` : `translate(${lx+lw-50},${cy0+120})`,stroke:"var(--ink)",fill:"none"},svg);
+  const c = el("g",{transform: stack ? `translate(${sbx+5*S},${ly+lh-62})` : `translate(${lx+lw-50},${cy0+120})`,stroke:"var(--ink)",fill:"none"},svg);
   el("circle",{r:36,"stroke-width":1.2},c); el("circle",{r:31,"stroke-width":.5},c);
   for (let i=0;i<32;i++){ const a=i/32*6.28, l=i%4?3:7; el("line",{x1:Math.cos(a)*31,y1:Math.sin(a)*31,x2:Math.cos(a)*(31-l),y2:Math.sin(a)*(31-l),"stroke-width":.6},c); }
   for (let i=0;i<4;i++){ const rot=i*90;
@@ -383,7 +384,7 @@ function draw(){
 
   // signature line
   txt(svg,`Fläche ≈ 980 m² · Baumstandorte nach Augenmaß`,
-      {x:W/2,y:H-fm-16,"text-anchor":"middle",class:"label","font-size":17,style:"fill:var(--sepia)"});
+      {x:fm+18,y:titleY+64,class:"label","font-size":16,style:"fill:var(--sepia)"});
 }
 
 function drawTree(g, p){
@@ -460,7 +461,7 @@ let moved = false;
 function stage(){ return document.getElementById("plan"); }
 function layout(){
   const st = stage(), vw = st.clientWidth, vh = st.clientHeight;
-  view.base = Math.min(vw/svg._W, vh/svg._H);
+  view.base = vh/vw > 1.2 ? vw/svg._W : Math.min(vw/svg._W, vh/svg._H);
   const w = svg._W*view.base, h = svg._H*view.base, sh = document.getElementById("sheet");
   sh.style.width = w+"px"; sh.style.height = h+"px";
   svg.setAttribute("width", w); svg.setAttribute("height", h);
@@ -552,7 +553,8 @@ function putTile(st, L, r, c){
   const lv = TM.levels[L], unit = lv.tile / lv.dsf;          // tile size in sheet units
   const img = new Image(); img.decoding = "async"; img.alt = "";
   img.style.left = c*unit + "px"; img.style.top = r*unit + "px";
-  img.style.width = Math.min(unit, TM.W - c*unit) + "px"; img.style.height = Math.min(unit, TM.H - r*unit) + "px";
+  // overlap neighbours slightly so sub-pixel rounding never shows a seam
+  img.style.width = Math.min(unit, TM.W - c*unit) + 2 + "px"; img.style.height = Math.min(unit, TM.H - r*unit) + 2 + "px";
   img.style.zIndex = L; img.dataset.state = st; img.dataset.level = L;
   img.src = tileUrl(st,L,r,c);
   document.getElementById("tiles").appendChild(img); tileImgs.set(k, img);
