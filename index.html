@@ -32,7 +32,11 @@
   main{ position:absolute; inset:0 }
   #plan{ position:absolute; inset:0; overflow:hidden; touch-action:none; cursor:grab }
   #plan.dragging{ cursor:grabbing }
-  #plan svg{ position:absolute; left:0; top:0; transform-origin:0 0; display:block }
+  #sheet{ position:absolute; left:0; top:0; transform-origin:0 0 }
+  #sheet canvas, #sheet svg{ position:absolute; left:0; top:0; display:block }
+  /* live layer: only text and tap targets are painted, the watercolour lives in the bitmap below */
+  svg.live path, svg.live circle, svg.live rect, svg.live ellipse, svg.live line{ opacity:0 }
+  svg.live .tree .crown{ transition:none }
   /* floating controls: stay put while the plan zooms */
   .toolbar{ position:fixed; z-index:6; top:calc(env(safe-area-inset-top) + 10px); right:10px; display:flex; align-items:center; gap:.4em;
             font-family:"Caveat",cursive; font-size:19px; color:var(--ink-soft);
@@ -66,7 +70,7 @@
   .close{ position:absolute; top:6px; right:8px; width:44px; height:44px; border:0; background:none; cursor:pointer;
           font-family:"IM Fell English",serif; font-size:30px; color:var(--ink-soft); line-height:1 }
   @media (min-width:700px){
-    #plan svg{ filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)) }
+    #sheet canvas{ filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)) }
     .toolbar{ font-size:21px }
     .modal{ align-items:center }
     .modal .tag{ width:380px; border-radius:2px 2px 14px 14px; transform:rotate(-1deg) translateY(30px); overflow:visible; max-height:none }
@@ -218,7 +222,9 @@ function draw(){
   if (phone){ const want = W * window.innerHeight / window.innerWidth;   // sheet shaped like the screen
     if (want > H){ mapTop += (want - H) * .35; H = want; } }
   svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Gartenplan der Streuobstwiese"});
-  document.getElementById("plan").appendChild(svg);
+  const plan = document.getElementById("plan"); plan.innerHTML = "";
+  const sheetEl = document.createElement("div"); sheetEl.id = "sheet"; plan.appendChild(sheetEl);
+  sheetEl.appendChild(document.createElement("canvas")); sheetEl.appendChild(svg);
   svg._W = W; svg._H = H;
   defs();
 
@@ -273,6 +279,7 @@ function draw(){
 
   // hedge along the dark south-east boundary (the satellite shows it)
   const hedge = el("g",{},g);
+  const hedgeShade = el("g",{},hedge), hedgeWash = el("g",{filter:"url(#wc1)"},hedge), hedgeInk = el("g",{},hedge);
   const hedgeEdges = [[3,4],[4,5]];
   for (const [a,b] of hedgeEdges){
     const [x0,y0]=pts[a],[x1,y1]=pts[b]; const L=Math.hypot(x1-x0,y1-y0); const ux=(x1-x0)/L, uy=(y1-y0)/L;
@@ -280,9 +287,9 @@ function draw(){
     const rh = rng("hecke"+a);
     for (let s=10; s<L-6; s+=15+rh()*6){
       const cx=x0+ux*s+nx*(13+rh()*4), cy=y0+uy*s+ny*(13+rh()*4), rr=12+rh()*6;
-      el("path",{d:blob(cx+3,cy+4,rr,rh,.2,12),fill:"url(#hatch)",opacity:.6},hedge);
-      el("path",{d:blob(cx,cy,rr,rh,.25,12),fill:rh()<.5?"#3d5e2c":"#4f7234",filter:`url(#wc${Math.floor(rh()*4)})`,opacity:.9},hedge);
-      el("path",{d:scallop(cx,cy,rr*.95,rh,7),fill:"none",stroke:"var(--ink)","stroke-width":.9,opacity:.8},hedge);
+      el("path",{d:blob(cx+3,cy+4,rr,rh,.2,12),fill:"url(#hatch)",opacity:.6},hedgeShade);
+      el("path",{d:blob(cx,cy,rr,rh,.25,12),fill:rh()<.5?"#3d5e2c":"#4f7234","data-f":Math.floor(rh()*4),opacity:.9},hedgeWash);
+      el("path",{d:scallop(cx,cy,rr*.95,rh,7),fill:"none",stroke:"var(--ink)","stroke-width":.9,opacity:.8},hedgeInk);
     }
   }
   const [hx,hy] = [(pts[4][0]+pts[5][0])/2+40,(pts[4][1]+pts[5][1])/2];
@@ -450,7 +457,9 @@ function stage(){ return document.getElementById("plan"); }
 function layout(){
   const st = stage(), vw = st.clientWidth, vh = st.clientHeight;
   view.base = Math.min(vw/svg._W, vh/svg._H);
-  svg.setAttribute("width", svg._W*view.base); svg.setAttribute("height", svg._H*view.base);
+  const w = svg._W*view.base, h = svg._H*view.base, sh = document.getElementById("sheet");
+  sh.style.width = w+"px"; sh.style.height = h+"px";
+  svg.setAttribute("width", w); svg.setAttribute("height", h);
   fit(false);
 }
 function clamp(){
@@ -460,10 +469,14 @@ function clamp(){
   view.tx = cw <= vw ? (vw-cw)/2 : Math.min(0, Math.max(vw-cw, view.tx));
   view.ty = ch <= vh ? (vh-ch)/2 : Math.min(0, Math.max(vh-ch, view.ty));
 }
+let settleT;
+const sheetEl = ()=>document.getElementById("sheet");
+function moving(){ sheetEl().style.willChange = "transform"; clearTimeout(settleT); }
+function settle(delay=250){ clearTimeout(settleT); settleT = setTimeout(()=>{ sheetEl().style.willChange = "auto"; }, delay); }
 function apply(anim){
-  clamp();
-  svg.style.transition = anim ? "transform .3s cubic-bezier(.2,.8,.2,1)" : "none";
-  svg.style.transform = `translate(${view.tx}px,${view.ty}px) scale(${view.k})`;
+  clamp(); moving(); if (anim) settle(380);
+  sheetEl().style.transition = anim ? "transform .3s cubic-bezier(.2,.8,.2,1)" : "none";
+  sheetEl().style.transform = `translate(${view.tx}px,${view.ty}px) scale(${view.k})`;
 }
 function fit(anim=true){ view.k = 1; view.tx = 0; view.ty = 0; apply(anim); }
 function zoomAt(f, cx, cy, anim){
@@ -484,13 +497,13 @@ function initPanZoom(){
       if (last && last.d){ view.tx += m[0]-last.m[0]; view.ty += m[1]-last.m[1]; zoomAt(d/last.d, m[0], m[1], false); }
       last = { d, m }; moved = true; } });
   const up = e=>{ if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); last = null;
-    if (!pts.size){ st.classList.remove("dragging");
+    if (!pts.size){ st.classList.remove("dragging"); settle();
       // double tap: zoom in there, or back out
       if (!moved && e.pointerType !== "mouse"){ const now = Date.now(), p = local(e);
         if (now - lastTap < 300){ view.k > 1.5 ? fit() : zoomAt(2.5, p[0], p[1], true); lastTap = 0; } else lastTap = now; } } };
   window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
   st.addEventListener("dblclick", e=>{ const p = local(e); view.k > 1.5 ? fit() : zoomAt(2.5, p[0], p[1], true); });
-  st.addEventListener("wheel", e=>{ e.preventDefault(); const p = local(e); zoomAt(Math.exp(-e.deltaY*0.0015), p[0], p[1], false); }, {passive:false});
+  st.addEventListener("wheel", e=>{ e.preventDefault(); const p = local(e); zoomAt(Math.exp(-e.deltaY*0.0015), p[0], p[1], false); settle(); }, {passive:false});
   // a drag must not count as a tap on a tree
   st.addEventListener("click", e=>{ if (moved){ e.stopPropagation(); e.preventDefault(); } }, true);
   const c = ()=>{ const b = st.getBoundingClientRect(); return [b.width/2, b.height/2]; };
@@ -508,6 +521,38 @@ function setState(s){
     c.style.transform = `scale(${sx},${sy})`; });
   svg.querySelectorAll(".fruit").forEach(f=>f.style.opacity = (s!=="jetzt" || f.classList.contains("always")) ? 1 : 0);
   if (current && document.getElementById("modal").classList.contains("open")) show(current);
+  bake();
+}
+
+// ---------- bake the watercolour into a bitmap once; zoom/pan then only moves pixels ----------
+const COLORS_CSS = { "--ink":"#2b2418", "--ink-soft":"#5a4a33", "--sepia":"#8a6a3f", "--heir":"#6d4f8c", "--berry":"#a33a3a" };
+let bakeId = 0;
+async function bake(){
+  const id = ++bakeId;
+  // the live layer must not run any filters: park them in data-filter
+  if (!svg.classList.contains("live")){
+    svg.querySelectorAll("[filter]").forEach(e=>{ e.dataset.filter = e.getAttribute("filter"); e.removeAttribute("filter"); });
+  }
+  const clone = svg.cloneNode(true);
+  clone.classList.remove("live");
+  clone.querySelectorAll("text").forEach(t=>t.remove());
+  clone.querySelectorAll("[data-filter]").forEach(e=>e.setAttribute("filter", e.dataset.filter));
+  const dpr = window.devicePixelRatio || 1;
+  let q = view.base * dpr * 2.5;                                   // sharp up to ~2.5x zoom
+  q = Math.min(q, Math.sqrt(16e6 / (svg._W*svg._H)));               // stay under mobile canvas limits
+  const cw = Math.round(svg._W*q), ch = Math.round(svg._H*q);
+  clone.setAttribute("width", cw); clone.setAttribute("height", ch);
+  let str = new XMLSerializer().serializeToString(clone);
+  for (const [k,v] of Object.entries(COLORS_CSS)) str = str.split(`var(${k})`).join(v);
+  const url = URL.createObjectURL(new Blob([str], {type:"image/svg+xml"}));
+  const img = new Image(); img.src = url;
+  try { await img.decode(); } catch(e){ URL.revokeObjectURL(url); return; }
+  if (id !== bakeId) { URL.revokeObjectURL(url); return; }
+  const cv = document.querySelector("#sheet canvas");
+  cv.width = cw; cv.height = ch; cv.style.width = svg._W*view.base+"px"; cv.style.height = svg._H*view.base+"px";
+  cv.getContext("2d").drawImage(img, 0, 0, cw, ch);
+  URL.revokeObjectURL(url);
+  svg.classList.add("live");
 }
 function closeCard(){ document.getElementById("modal").classList.remove("open"); }
 document.getElementById("close").onclick = closeCard;
@@ -538,7 +583,7 @@ function show(p){
 
 fetch("garden.json").then(r=>r.json()).then(d=>{
   data = d; draw(); layout(); setState("jetzt"); initPanZoom();
-  let rt; window.addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ svg.remove(); draw(); layout(); setState(state); }, 150); });
+  let rt; window.addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ draw(); layout(); setState(state); }, 150); });
   document.getElementById("bNow").onclick = ()=>setState("jetzt");
   document.getElementById("bLater").onclick = ()=>setState("in10");
 }).catch(e=>{ document.getElementById("plan").textContent = "garden.json konnte nicht geladen werden – bitte über start_knuelchwald.ps1 öffnen. ("+e+")"; });
