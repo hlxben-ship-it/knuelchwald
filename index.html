@@ -36,7 +36,7 @@
   #sheet svg, #tiles{ position:absolute; left:0; top:0; display:block }
   #tiles{ transform-origin:0 0 }
   #tiles img{ position:absolute; display:block; pointer-events:none; -webkit-user-drag:none }
-  body.export, body.export #plan{ background:none } body.export .toolbar, body.export .zoombar{ display:none }
+  body.export, body.export #plan{ background:none } body.export .toolbar, body.export .zoombar, body.export .scalebar{ display:none }
   /* live layer: only text and tap targets are painted, the watercolour lives in the bitmap below */
   svg.live path, svg.live circle, svg.live rect, svg.live ellipse, svg.live line{ opacity:0 }
   svg.live .tree .crown{ transition:none }
@@ -47,6 +47,11 @@
             box-shadow:0 6px 16px -6px rgba(0,0,0,.55) }
   .toggle{ display:flex; border:1.5px solid var(--ink); border-radius:2px }
   .toggle button{ background:none; border:0; padding:2px 10px; min-height:34px; cursor:pointer; color:var(--ink); font:inherit }
+  .scalebar{ position:fixed; z-index:6; right:12px; bottom:calc(env(safe-area-inset-bottom) + 64px); display:flex; flex-direction:column; align-items:flex-end;
+              font-family:"EB Garamond",serif; font-variant-numeric:lining-nums; font-size:13px; font-weight:600; color:var(--ink);
+              background:rgba(246,238,219,.88); padding:3px 7px 2px; border:1px solid #c9b48a; border-radius:3px }
+  .scalebar .bar{ height:7px; border:1.5px solid var(--ink); border-top:0;
+                  background:repeating-linear-gradient(90deg, var(--ink) 0 50%, transparent 50% 100%) }
   .zoombar{ position:fixed; z-index:6; right:10px; bottom:calc(env(safe-area-inset-bottom) + 12px); display:flex; gap:5px }
   @media (max-width:420px){ .toolbar > span{ display:none } .toolbar{ padding-left:3px } }
   .zoombar button{ width:42px; height:42px; border-radius:3px; border:1px solid #c9b48a; background:rgba(246,238,219,.92);
@@ -117,6 +122,7 @@
     <button id="bNow" class="on">heute</button><button id="bLater">in 10 Jahren</button>
   </div>
 </div>
+<div class="scalebar" id="scalebar" aria-hidden="true"><div class="bar"></div><span id="scaleTxt">5 m</span></div>
 <div class="zoombar">
   <button id="zIn" aria-label="Hineinzoomen">+</button>
   <button id="zOut" aria-label="Herauszoomen">−</button>
@@ -223,8 +229,8 @@ function draw(){
   const titleY = fm + 72; let mapTop = titleY + 82;
   const W = Math.round(mapW + M*2 + 10);
   const lh0 = 44 + data.pflanzen.length*24 + 20;
-  let H = mapTop + mapH + 110 + lh0 + 70;
-  const want = W * SHEET_RATIO; let gap = 0; if (want > H){ gap = (want - H)/4; mapTop += gap; H = want; }   // the bottom half stays free for the control bar
+  let H = mapTop + mapH + 90 + lh0 + 230;          // bottom: room for the control bar
+  const want = W * SHEET_RATIO; let gap = 0; if (want > H){ gap = (want - H)/3; mapTop += gap; H = want; }
   H = Math.round(H);
   svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Gartenplan der Streuobstwiese"});
   const plan = document.getElementById("plan"); plan.innerHTML = "";
@@ -344,7 +350,7 @@ function draw(){
   el("path",{d:"M300,40 c6,-4 12,-2 14,2 c-6,2 -10,4 -14,-2",fill:"var(--ink)"},tc);
 
   // ---------- legend cartouche in the empty south-east ----------
-  const lx = stack ? M : 25.5*S + M + 92, ly = stack ? mapTop + mapH + 110 + gap : 22*S + mapTop + 10;
+  const lx = stack ? M : 25.5*S + M + 92, ly = stack ? mapTop + mapH + 90 : 22*S + mapTop + 10;
   const lg = el("g",{transform:`translate(${lx},${ly})`},svg);
   const lw = 300, lh = 44 + data.pflanzen.length*24 + 20;
   const rl = rng("legend");
@@ -365,7 +371,7 @@ function draw(){
   // compass rose + scale bar under the legend
   const cy0 = stack ? ly + 40 : ly + lh + 60;
   const sbx = stack ? lx + lw + 70 : lx;
-  const c = el("g",{transform: stack ? `translate(${sbx+5*S},${ly+lh-62})` : `translate(${lx+lw-50},${cy0+120})`,stroke:"var(--ink)",fill:"none"},svg);
+  const c = el("g",{transform: stack ? `translate(${lx+lw+(W-M-lx-lw)/2},${ly+lh/2+8})` : `translate(${lx+lw-50},${cy0+120})`,stroke:"var(--ink)",fill:"none"},svg);
   el("circle",{r:36,"stroke-width":1.2},c); el("circle",{r:31,"stroke-width":.5},c);
   for (let i=0;i<32;i++){ const a=i/32*6.28, l=i%4?3:7; el("line",{x1:Math.cos(a)*31,y1:Math.sin(a)*31,x2:Math.cos(a)*(31-l),y2:Math.sin(a)*(31-l),"stroke-width":.6},c); }
   for (let i=0;i<4;i++){ const rot=i*90;
@@ -376,7 +382,7 @@ function draw(){
   el("circle",{r:3,fill:"var(--ink)"},c);
   txt(c,"N",{y:-54,"text-anchor":"middle",class:"fellsc","font-size":20,fill:"var(--ink)",stroke:"none"});
 
-  const sb = el("g",{transform:`translate(${sbx},${cy0+10})`},svg);
+  const sb = el("g",{transform:`translate(${sbx},${cy0+10})`,display: stack ? "none" : null},svg);
   for (let i=0;i<5;i++){ el("rect",{x:i*2*S,y:0,width:2*S,height:7,fill:i%2?"#f6eedb":"var(--ink)",stroke:"var(--ink)","stroke-width":1},sb);
     el("rect",{x:i*2*S,y:7,width:2*S,height:7,fill:i%2?"var(--ink)":"#f6eedb",stroke:"var(--ink)","stroke-width":1},sb); }
   [0,5,10].forEach(m=>txt(sb, m+(m===10?" m":""), {x:m*S,y:32,"text-anchor":"middle",class:"num","font-size":15}));
@@ -479,7 +485,15 @@ let settleT;
 const sheetEl = ()=>document.getElementById("sheet");
 function moving(){ sheetEl().style.willChange = "transform"; clearTimeout(settleT); }
 function settle(delay=250){ clearTimeout(settleT); settleT = setTimeout(()=>{ sheetEl().style.willChange = "auto"; updateTiles(); }, delay); }
+function updateScale(){
+  const pxPerM = S * view.base * view.k, steps = [1,2,5,10,20];
+  let m = steps.find(v=>v*pxPerM >= 70) || 20;
+  const bar = document.querySelector("#scalebar .bar"); if (!bar) return;
+  const w = m*pxPerM; bar.style.width = w+"px"; bar.style.backgroundSize = (w/5*2)+"px 100%";   // 5 equal segments
+  document.getElementById("scaleTxt").textContent = m + " m";
+}
 function apply(anim){
+  if (typeof updateScale === "function") setTimeout(updateScale, 0);
   clamp(); moving(); if (anim) settle(380);
   sheetEl().style.transition = anim ? "transform .3s cubic-bezier(.2,.8,.2,1)" : "none";
   sheetEl().style.transform = `translate(${view.tx}px,${view.ty}px) scale(${view.k})`;
