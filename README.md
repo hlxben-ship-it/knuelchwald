@@ -8,4 +8,4 @@ Hand-drawn, roughly true-to-scale plan of the Streuobstwiese — a static web ap
 
 Local: `./start_knuelchwald.ps1` → http://localhost:5197
 
-Deploy: Cloudflare Pages from `main`, no build command, output directory `/`.
+Deploy: GitHub Pages from `main`, folder `/ (root)` → https://hlxben-ship-it.github.io/knuelchwald/
