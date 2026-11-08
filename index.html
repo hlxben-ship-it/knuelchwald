@@ -33,7 +33,10 @@
   #plan{ position:absolute; inset:0; overflow:hidden; touch-action:none; cursor:grab }
   #plan.dragging{ cursor:grabbing }
   #sheet{ position:absolute; left:0; top:0; transform-origin:0 0 }
-  #sheet canvas, #sheet svg{ position:absolute; left:0; top:0; display:block }
+  #sheet svg, #tiles{ position:absolute; left:0; top:0; display:block }
+  #tiles{ transform-origin:0 0 }
+  #tiles img{ position:absolute; display:block; pointer-events:none; -webkit-user-drag:none }
+  body.export, body.export #plan{ background:none } body.export .toolbar, body.export .zoombar{ display:none }
   /* live layer: only text and tap targets are painted, the watercolour lives in the bitmap below */
   svg.live path, svg.live circle, svg.live rect, svg.live ellipse, svg.live line{ opacity:0 }
   svg.live .tree .crown{ transition:none }
@@ -70,7 +73,7 @@
   .close{ position:absolute; top:6px; right:8px; width:44px; height:44px; border:0; background:none; cursor:pointer;
           font-family:"IM Fell English",serif; font-size:30px; color:var(--ink-soft); line-height:1 }
   @media (min-width:700px){
-    #sheet canvas{ filter: drop-shadow(0 18px 30px rgba(0,0,0,.55)) }
+    #sheet{ box-shadow: 0 18px 40px rgba(0,0,0,.55) }
     .toolbar{ font-size:21px }
     .modal{ align-items:center }
     .modal .tag{ width:380px; border-radius:2px 2px 14px 14px; transform:rotate(-1deg) translateY(30px); overflow:visible; max-height:none }
@@ -124,6 +127,8 @@
 
 <script>
 const S = 22;                 // px per meter
+const SHEET_RATIO = 2.0;      // sheet height / width
+const EXPORT = new URLSearchParams(location.search).get("export");   // render mode for tools/render-tiles.mjs
 const NS = "http://www.w3.org/2000/svg";
 const MONATE = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
 let state = "jetzt", data, svg, current = null;
@@ -211,20 +216,19 @@ function defs(){
 function draw(){
   const xs = data.grenze.map(p=>p[0]), ys = data.grenze.map(p=>p[1]);
   const mapW = Math.max(...xs)*S, mapH = Math.max(...ys)*S;
-  const phone = window.innerWidth < 700;         // phone: thin frame, map fills the width
-  const M = phone ? 58 : 110;                    // margin inside the sheet
-  const fm = phone ? 8 : 26;
+  // one fixed portrait sheet (phone-shaped); the watercolour tiles are pre-rendered for exactly this layout
+  const phone = true, stack = true;
+  const M = 58, fm = 8;
   const titleY = fm + 72; let mapTop = titleY + 82;
-  const W = mapW + M*2 + (phone ? 10 : 40);
-  const stack = phone && window.innerHeight > window.innerWidth*1.2;   // legend below the map
+  const W = Math.round(mapW + M*2 + 10);
   const lh0 = 44 + data.pflanzen.length*24 + 20;
-  let H = stack ? mapTop + mapH + 110 + lh0 + 70 : mapTop + mapH + (phone ? 150 : 170);
-  if (phone){ const want = W * window.innerHeight / window.innerWidth;   // sheet shaped like the screen
-    if (want > H){ mapTop += (want - H) * .35; H = want; } }
+  let H = mapTop + mapH + 110 + lh0 + 70;
+  const want = W * SHEET_RATIO; if (want > H){ mapTop += (want - H) * .35; H = want; }
+  H = Math.round(H);
   svg = el("svg", {viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Gartenplan der Streuobstwiese"});
   const plan = document.getElementById("plan"); plan.innerHTML = "";
   const sheetEl = document.createElement("div"); sheetEl.id = "sheet"; plan.appendChild(sheetEl);
-  sheetEl.appendChild(document.createElement("canvas")); sheetEl.appendChild(svg);
+  const tl = document.createElement("div"); tl.id = "tiles"; sheetEl.appendChild(tl); sheetEl.appendChild(svg);
   svg._W = W; svg._H = H;
   defs();
 
@@ -460,6 +464,7 @@ function layout(){
   const w = svg._W*view.base, h = svg._H*view.base, sh = document.getElementById("sheet");
   sh.style.width = w+"px"; sh.style.height = h+"px";
   svg.setAttribute("width", w); svg.setAttribute("height", h);
+  document.getElementById("tiles").style.transform = `scale(${view.base})`;
   fit(false);
 }
 function clamp(){
@@ -472,7 +477,7 @@ function clamp(){
 let settleT;
 const sheetEl = ()=>document.getElementById("sheet");
 function moving(){ sheetEl().style.willChange = "transform"; clearTimeout(settleT); }
-function settle(delay=250){ clearTimeout(settleT); settleT = setTimeout(()=>{ sheetEl().style.willChange = "auto"; }, delay); }
+function settle(delay=250){ clearTimeout(settleT); settleT = setTimeout(()=>{ sheetEl().style.willChange = "auto"; updateTiles(); }, delay); }
 function apply(anim){
   clamp(); moving(); if (anim) settle(380);
   sheetEl().style.transition = anim ? "transform .3s cubic-bezier(.2,.8,.2,1)" : "none";
@@ -521,39 +526,76 @@ function setState(s){
     c.style.transform = `scale(${sx},${sy})`; });
   svg.querySelectorAll(".fruit").forEach(f=>f.style.opacity = (s!=="jetzt" || f.classList.contains("always")) ? 1 : 0);
   if (current && document.getElementById("modal").classList.contains("open")) show(current);
-  bake();
+  if (!EXPORT) showTiles();
 }
 
-// ---------- bake the watercolour into a bitmap once; zoom/pan then only moves pixels ----------
-const COLORS_CSS = { "--ink":"#2b2418", "--ink-soft":"#5a4a33", "--sepia":"#8a6a3f", "--heir":"#6d4f8c", "--berry":"#a33a3a" };
-let bakeId = 0;
-async function bake(){
-  const id = ++bakeId;
-  // the live layer must not run any filters: park them in data-filter
-  if (!svg.classList.contains("live")){
-    svg.querySelectorAll("[filter]").forEach(e=>{ e.dataset.filter = e.getAttribute("filter"); e.removeAttribute("filter"); });
-  }
-  const clone = svg.cloneNode(true);
-  clone.classList.remove("live");
-  clone.querySelectorAll("text").forEach(t=>t.remove());
-  clone.querySelectorAll("[data-filter]").forEach(e=>e.setAttribute("filter", e.dataset.filter));
-  const dpr = window.devicePixelRatio || 1;
-  let q = view.base * dpr * 2.5;                                   // sharp up to ~2.5x zoom
-  q = Math.min(q, Math.sqrt(16e6 / (svg._W*svg._H)));               // stay under mobile canvas limits
-  const cw = Math.round(svg._W*q), ch = Math.round(svg._H*q);
-  clone.setAttribute("width", cw); clone.setAttribute("height", ch);
-  let str = new XMLSerializer().serializeToString(clone);
-  for (const [k,v] of Object.entries(COLORS_CSS)) str = str.split(`var(${k})`).join(v);
-  const url = URL.createObjectURL(new Blob([str], {type:"image/svg+xml"}));
-  const img = new Image(); img.src = url;
-  try { await img.decode(); } catch(e){ URL.revokeObjectURL(url); return; }
-  if (id !== bakeId) { URL.revokeObjectURL(url); return; }
-  const cv = document.querySelector("#sheet canvas");
-  cv.width = cw; cv.height = ch; cv.style.width = svg._W*view.base+"px"; cv.style.height = svg._H*view.base+"px";
-  cv.getContext("2d").drawImage(img, 0, 0, cw, ch);
-  URL.revokeObjectURL(url);
+// ---------- pre-rendered watercolour tiles (made by tools/render-tiles.mjs) ----------
+// The phone never runs the SVG filters: it shows JPEG tiles of the drawing and keeps only
+// text + tap targets as live SVG on top. Level 0 is always loaded, sharper levels only where visible.
+let TM = null;                       // tiles/manifest.json
+const tileImgs = new Map();          // key -> <img>
+
+function liveOnly(){
+  // strip every filter from the live layer before its first paint, hide its shapes
+  svg.querySelectorAll("[filter]").forEach(e=>e.removeAttribute("filter"));
   svg.classList.add("live");
 }
+async function loadManifest(){
+  if (TM) return TM;
+  TM = await fetch("tiles/manifest.json", {cache:"no-cache"}).then(r=>r.json());
+  return TM;
+}
+function tileKey(st, L, r, c){ return `${st}/${L}/${r}_${c}`; }
+function tileUrl(st, L, r, c){ return `tiles/${tileKey(st,L,r,c)}.jpg?v=${TM.version}`; }
+function putTile(st, L, r, c){
+  const k = tileKey(st,L,r,c); if (tileImgs.has(k)) return;
+  const lv = TM.levels[L], unit = lv.tile / lv.dsf;          // tile size in sheet units
+  const img = new Image(); img.decoding = "async"; img.alt = "";
+  img.style.left = c*unit + "px"; img.style.top = r*unit + "px";
+  img.style.width = Math.min(unit, TM.W - c*unit) + "px"; img.style.height = Math.min(unit, TM.H - r*unit) + "px";
+  img.style.zIndex = L; img.dataset.state = st; img.dataset.level = L;
+  img.src = tileUrl(st,L,r,c);
+  document.getElementById("tiles").appendChild(img); tileImgs.set(k, img);
+}
+async function showTiles(){
+  await loadManifest();
+  const tl = document.getElementById("tiles");
+  tl.style.width = TM.W + "px"; tl.style.height = TM.H + "px";
+  const st = state === "jetzt" ? "jetzt" : "in10";
+  // drop tiles of the other state, keep this state's
+  for (const [k,img] of tileImgs) if (img.dataset.state !== st){ img.remove(); tileImgs.delete(k); }
+  const l0 = TM.levels[0];
+  for (let r=0;r<l0.rows;r++) for (let c=0;c<l0.cols;c++) putTile(st,0,r,c);
+  updateTiles();
+}
+function updateTiles(){
+  if (!TM) return;
+  const st = state === "jetzt" ? "jetzt" : "in10";
+  const dpr = window.devicePixelRatio || 1;
+  const need = view.base * view.k * dpr;                     // device px per sheet unit right now
+  let L = 0; while (L < TM.levels.length-1 && TM.levels[L].dsf < need*0.9) L++;
+  // forget sharper tiles we no longer need (memory on iPhone)
+  for (const [k,img] of tileImgs) if (+img.dataset.level > L){ img.remove(); tileImgs.delete(k); }
+  if (L === 0) return;
+  const lv = TM.levels[L], unit = lv.tile / lv.dsf;
+  const st_ = stage(), vw = st_.clientWidth, vh = st_.clientHeight, sc = view.base*view.k;
+  const x0 = -view.tx/sc, y0 = -view.ty/sc, x1 = x0 + vw/sc, y1 = y0 + vh/sc;  // visible sheet rect
+  for (let r=Math.max(0,Math.floor(y0/unit)); r<=Math.min(lv.rows-1,Math.floor(y1/unit)); r++)
+    for (let c=Math.max(0,Math.floor(x0/unit)); c<=Math.min(lv.cols-1,Math.floor(x1/unit)); c++) putTile(st,L,r,c);
+}
+
+// ---------- export mode: full drawing without text, for the tile renderer ----------
+function exportMode(){
+  document.body.classList.add("export");
+  setState(EXPORT === "in10" ? "in10" : "jetzt");
+  svg.querySelectorAll("text").forEach(t=>t.remove());
+  const sh = document.getElementById("sheet");
+  sh.style.width = svg._W+"px"; sh.style.height = svg._H+"px";
+  svg.setAttribute("width", svg._W); svg.setAttribute("height", svg._H);
+  svg.querySelectorAll(".crown,.fruit").forEach(e=>e.style.transition = "none");
+  document.body.dataset.ready = `${svg._W}x${svg._H}`;
+}
+
 function closeCard(){ document.getElementById("modal").classList.remove("open"); }
 document.getElementById("close").onclick = closeCard;
 document.getElementById("modal").addEventListener("click", e=>{ if (e.target.id==="modal") closeCard(); });
@@ -582,8 +624,10 @@ function show(p){
 }
 
 fetch("garden.json").then(r=>r.json()).then(d=>{
-  data = d; draw(); layout(); setState("jetzt"); initPanZoom();
-  let rt; window.addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ draw(); layout(); setState(state); }, 150); });
+  data = d; draw();
+  if (EXPORT){ exportMode(); return; }
+  liveOnly(); layout(); setState("jetzt"); initPanZoom();
+  let rt; window.addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ layout(); updateTiles(); }, 150); });
   document.getElementById("bNow").onclick = ()=>setState("jetzt");
   document.getElementById("bLater").onclick = ()=>setState("in10");
 }).catch(e=>{ document.getElementById("plan").textContent = "garden.json konnte nicht geladen werden – bitte über start_knuelchwald.ps1 öffnen. ("+e+")"; });
